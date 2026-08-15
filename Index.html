@@ -1,113 +1,47 @@
-
 <!DOCTYPE html>
 <html>
 <head>
   <base target="_top">
-  <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f6f7fb">
+  <title>Maths Revision</title>
   <style>
-    :root{--bg:#f5f7fb;--card:#fff;--text:#172033;--muted:#6c7584;--primary:#3558d6;--primary2:#edf1ff;--ok:#16803a;--okbg:#eaf8ef;--bad:#c13b3b;--badbg:#fdeeee;--warn:#8b6500;--warnbg:#fff4d6;--line:#e4e8ef;--shadow:0 8px 24px rgba(30,42,70,.06);--nav:rgba(255,255,255,.97)}
-    body.dark{--bg:#10131a;--card:#171c26;--text:#edf1f7;--muted:#9ba5b5;--primary:#86a0ff;--primary2:#202943;--ok:#72d994;--okbg:#173322;--bad:#ff8a8a;--badbg:#3a1d20;--warn:#f0bd57;--warnbg:#342b17;--line:#2a3140;--shadow:0 10px 28px rgba(0,0,0,.22);--nav:rgba(23,28,38,.97)}
-    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--text)}button,input,textarea,select{font:inherit}.app{max-width:820px;margin:0 auto;min-height:100vh;padding-bottom:84px}.topbar{position:sticky;top:0;z-index:30;background:var(--bg);padding:9px 12px;border-bottom:1px solid var(--line)}.brand{display:flex;justify-content:space-between;align-items:center;gap:10px}.brand h1{font-size:22px;margin:0;line-height:1.15}.brand small{display:block;color:var(--muted);font-size:14px;margin-top:2px}.top-actions{display:flex;gap:6px}.iconbtn{width:34px;height:34px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--text)}.content{padding:12px}.hidden{display:none!important}.grid{display:grid;gap:10px}.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:var(--shadow)}.hero{background:linear-gradient(135deg,#3153d2,#6e83e2);color:#fff;border:0}.hero .muted{color:rgba(255,255,255,.82)}.hero h2{font-size:24px;margin:4px 0}.eyebrow{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--primary)}.hero .eyebrow{color:#dfe6ff}.section-title{font-size:14px;font-weight:850;margin:18px 0 8px}.btn{border:0;border-radius:12px;padding:10px 12px;font-weight:800;cursor:pointer;min-height:42px}.btn.primary{background:var(--primary);color:#fff}.hero .btn.primary{background:#fff;color:#2949c1}.btn.soft{background:var(--primary2);color:var(--primary)}.btn.ghost{background:var(--card);border:1px solid var(--line);color:var(--text)}.btn.warn{background:var(--warnbg);color:var(--warn)}.btn.ok{background:var(--okbg);color:var(--ok)}.btn.small{min-height:50px;padding:10px 6px;font-size:14px}.row{display:flex;gap:8px;align-items:center}.between{justify-content:space-between}.muted{color:var(--muted)}.tag{display:inline-flex;border-radius:999px;padding:6px 11px;font-size:13px;background:var(--card);color:var(--muted);border:1px solid var(--line)}.action-card{min-height:92px;display:flex;flex-direction:column;justify-content:space-between;cursor:pointer}.action-icon{font-size:22px}.action-title{font-size:14px;font-weight:850}.metric{font-size:25px;font-weight:900}.list{display:grid;gap:9px}.list-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px}.nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(820px,100%);z-index:40;background:var(--nav);border-top:1px solid var(--line);padding:4px 4px calc(4px + env(safe-area-inset-bottom));display:grid;grid-template-columns:repeat(5,1fr)}.nav button{border:0;background:transparent;padding:5px 2px;color:var(--muted);font-size:9px}.nav button.active{color:var(--primary);font-weight:850}.nav b{display:block;font-size:17px;margin-bottom:1px}.quiz-wrap{padding:14px 18px 126px}.quiz-head{display:flex;justify-content:space-between;align-items:center;gap:8px}.quiz-title{font-size:20px;font-weight:900;line-height:1.2}.progressbar{height:8px;background:#dfe4ee;border-radius:999px;overflow:hidden;margin:8px 0 9px}.progressbar>div{height:100%;background:var(--primary)}.meta{display:flex;gap:5px;overflow-x:auto;padding-bottom:2px}.meta .tag{flex:0 0 auto}.calc-switch{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;margin:8px 0}.calc-switch select{width:100%;min-width:0;border:1px solid var(--line);border-radius:11px;padding:9px 10px;background:var(--card);color:var(--text);font-weight:750}.calc-switch .btn{min-height:38px;padding:7px 11px}.question-card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px 18px;box-shadow:var(--shadow);margin-top:8px}.question{font-size:clamp(27px,7vw,38px);line-height:1.35;margin:12px 0 22px;font-weight:850;white-space:pre-wrap}.question.q-medium{font-size:clamp(22px,4vw,28px);line-height:1.42}.question.q-long{font-size:clamp(18px,2.6vw,22px);line-height:1.5;font-weight:750;margin-bottom:18px}.question.q-xlong{font-size:clamp(16px,2.2vw,20px);line-height:1.52;font-weight:700;margin-bottom:16px}.options{display:grid;gap:12px}.option{display:flex;gap:14px;align-items:center;width:100%;text-align:left;border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:18px;padding:16px 14px;min-height:72px;font-size:22px;line-height:1.25}.option .letter{width:42px;height:42px;flex:0 0 42px;border-radius:12px;font-size:22px;background:var(--primary2);color:var(--primary);display:flex;align-items:center;justify-content:center;font-weight:900}.option.correct{border-color:#78c992;background:var(--okbg)}.option.wrong{border-color:#e49a9a;background:var(--badbg)}.answer-block{margin-top:12px;border:1px solid var(--line);border-radius:13px;overflow:hidden}.answer-head{padding:10px 11px;font-weight:850;border-bottom:1px solid var(--line);color:var(--ok)}.answer-body{padding:15px;line-height:1.62;font-size:18px}.answer-body h4{font-size:15px;margin:12px 0 5px}.formula-answer{font-size:23px;font-weight:900;color:var(--ok);white-space:pre-wrap}.explanation{white-space:pre-wrap}.memory{padding:8px 10px;border-left:3px solid var(--primary);background:var(--primary2);border-radius:9px;white-space:pre-wrap}.feedback-result{font-weight:850;margin-bottom:9px}.feedback-result.ok{color:var(--ok)}.feedback-result.bad{color:var(--bad)}.quiz-dock{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:min(820px,100%);z-index:50;background:var(--nav);border-top:1px solid var(--line);padding:5px 8px calc(5px + env(safe-area-inset-bottom))}.dock-tools{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.dock-nav{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:5px}.dock-nav .btn{min-height:36px;padding:7px}.toast{position:fixed;left:50%;bottom:112px;transform:translateX(-50%);z-index:100;background:#192033;color:#fff;padding:9px 12px;border-radius:10px;font-size:12px;max-width:88%;text-align:center}.modal{position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:80;display:flex;align-items:flex-end;justify-content:center}.sheet{width:min(820px,100%);max-height:85vh;overflow:auto;background:var(--card);border-radius:18px 18px 0 0;padding:16px}.notearea{width:100%;min-height:120px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--text);padding:10px}.loading{position:fixed;inset:0;background:var(--bg);z-index:120;display:flex;align-items:center;justify-content:center}.spinner{width:30px;height:30px;border:3px solid var(--line);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
-    .practice-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0 14px}.topic-row{cursor:pointer}.topic-row .muted{font-size:12px}.hub-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}.hub-stat{text-align:center;padding:10px 6px;background:var(--primary2);border-radius:12px}.hub-stat b{display:block;font-size:20px}.diagram-wrap{margin:2px 0 18px;padding:10px;border:1px solid var(--line);border-radius:14px;background:var(--bg);color:var(--text)}.math-diagram{display:block;width:100%;height:auto;max-height:260px}.math-diagram .shape{fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}.math-diagram .thin{fill:none;stroke:currentColor;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round}.math-diagram .dash{fill:none;stroke:currentColor;stroke-width:1.5;stroke-dasharray:6 5}.math-diagram .pt{fill:currentColor}.math-diagram text{fill:currentColor;font-size:13px;font-family:Inter,system-ui,sans-serif}.diagram-note{text-align:center;color:var(--muted);font-size:11px;margin-top:3px}.diagram-data{text-align:center;color:var(--muted);font-size:11px;line-height:1.35;margin-top:4px}.question.q-visual-medium{font-size:clamp(22px,4vw,28px);line-height:1.42}.question.q-visual-long{font-size:clamp(18px,2.6vw,22px);line-height:1.5;font-weight:750}.question.q-visual-xlong{font-size:clamp(16px,2.2vw,20px);line-height:1.54;font-weight:700}
-    @media(max-width:480px){.content{padding:14px}.grid2{gap:10px}.card{padding:14px}.hero h2{font-size:27px}.action-card{min-height:92px}.quiz-wrap{padding:14px 16px 132px}.topbar{padding:13px 16px}.brand h1{font-size:23px}.brand small{font-size:14px}.quiz-title{font-size:21px}.eyebrow{font-size:12px}.tag{font-size:12px;padding:6px 10px}.question-card{padding:20px 16px;border-radius:20px}.question{font-size:29px;line-height:1.34;margin:12px 0 24px}.question.q-medium{font-size:23px;line-height:1.42}.question.q-long{font-size:19px;line-height:1.5;margin-bottom:18px}.question.q-xlong{font-size:17px;line-height:1.52;margin-bottom:16px}.option{padding:16px 14px;min-height:74px;font-size:22px;border-radius:18px}.option .letter{width:42px;height:42px;flex-basis:42px;font-size:22px}.dock-tools .btn{font-size:14px;padding:9px 4px;min-height:52px}.dock-nav .btn{font-size:16px;min-height:48px}.answer-body{font-size:18px}.formula-answer{font-size:23px}.meta{gap:7px}.quiz-dock{padding:8px 10px calc(8px + env(safe-area-inset-bottom))}.calc-switch{grid-template-columns:minmax(0,1fr) auto}.practice-actions{grid-template-columns:1fr}.question.q-visual-medium{font-size:23px}.question.q-visual-long{font-size:19px}.question.q-visual-xlong{font-size:17px}}
+:root{--bg:#f6f7fb;--card:#fff;--text:#172033;--muted:#6d7688;--line:#e5e8ef;--primary:#3454d1;--primary2:#edf0ff;--green:#15803d;--red:#c62828;--amber:#a16207;--shadow:0 6px 22px rgba(26,36,64,.07)}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);-webkit-text-size-adjust:100%}.app{width:100%;max-width:820px;margin:0 auto;min-height:100vh;padding-bottom:92px}.topbar{position:sticky;top:0;z-index:20;background:rgba(246,247,251,.94);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding:13px 16px}.brand{font-size:20px;font-weight:900}.muted{color:var(--muted)}.content{padding:14px}.grid{display:grid;gap:12px}.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.card,.list-card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:15px}.list{display:grid;gap:9px}.row{display:flex;align-items:center;gap:10px}.between{justify-content:space-between}.section-title{font-size:13px;font-weight:900;letter-spacing:.08em;color:var(--muted);margin:8px 2px;text-transform:uppercase}.eyebrow{font-size:11px;font-weight:900;letter-spacing:.08em;color:var(--primary);text-transform:uppercase}.btn{border:0;border-radius:12px;padding:11px 13px;font-weight:800;font-size:14px;cursor:pointer}.btn.primary{background:var(--primary);color:white}.btn.soft{background:var(--primary2);color:var(--primary)}.btn.ghost{background:#f3f4f8;color:var(--text)}.btn.small{padding:8px 10px;font-size:12px}.tag{font-size:11px;font-weight:800;background:#f1f3f8;border-radius:999px;padding:6px 8px;color:var(--muted)}.action-card{display:flex;gap:12px;align-items:center;cursor:pointer}.action-icon{font-size:24px}.action-title{font-weight:900}.nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(820px,100%);z-index:30;background:rgba(255,255,255,.96);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr);padding:7px 6px calc(7px + env(safe-area-inset-bottom))}.nav button{border:0;background:none;padding:7px 2px;color:var(--muted);font-size:11px;font-weight:800}.nav button.active{color:var(--primary)}.nav .ico{display:block;font-size:20px;margin-bottom:2px}.hidden{display:none!important}.hero{background:linear-gradient(135deg,#2f4fd0,#6378e8);color:#fff;border:0}.hero .muted{color:#e7eaff}.hero-title{font-size:24px;font-weight:950;margin:4px 0}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}.stat{background:rgba(255,255,255,.13);border-radius:12px;padding:10px}.stat b{display:block;font-size:18px}.progress{height:8px;background:#e8eaf1;border-radius:999px;overflow:hidden}.progress>i{display:block;height:100%;background:var(--primary);border-radius:999px}.hub-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:13px}.hub-stat{background:#f6f7fb;border-radius:12px;padding:10px;text-align:center}.hub-stat b{display:block;font-size:18px}.hub-stat span{font-size:11px}.practice-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.topic-row{cursor:pointer}.quiz{padding:14px 14px 110px}.quiz-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}.quiz-title{font-weight:900;font-size:18px}.qcard{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:17px;box-shadow:var(--shadow)}.qtext{font-size:22px;line-height:1.42;font-weight:850;white-space:pre-wrap;overflow-wrap:anywhere}.qtext.q-medium{font-size:20px}.qtext.q-long{font-size:18px}.qtext.q-xlong{font-size:16px}.options{display:grid;gap:9px;margin-top:16px}.option{width:100%;text-align:left;border:1px solid var(--line);background:#fff;border-radius:13px;padding:13px;font-size:16px;line-height:1.35;color:var(--text)}.option.correct{border-color:#86c89a;background:#eef9f1}.option.wrong{border-color:#ef9b9b;background:#fff0f0}.explain{margin-top:15px;border-top:1px solid var(--line);padding-top:14px}.explain h4{margin:0 0 6px}.memory{margin-top:9px;background:#fff8dd;border-radius:12px;padding:10px}.diagram{margin:14px auto 4px;max-width:420px;width:100%;overflow:hidden}.diagram svg{width:100%;height:auto;display:block}.quiz-dock{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:min(820px,100%);z-index:40;background:rgba(255,255,255,.97);border-top:1px solid var(--line);padding:9px 12px calc(9px + env(safe-area-inset-bottom));display:flex;gap:8px}.quiz-dock .btn{flex:1}.modal{position:fixed;inset:0;background:rgba(20,25,40,.45);z-index:60;display:flex;align-items:flex-end;justify-content:center}.sheet{background:#fff;width:min(820px,100%);border-radius:20px 20px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom));max-height:85vh;overflow:auto}.iconbtn{border:0;background:#f1f3f8;border-radius:10px;width:38px;height:38px;font-size:20px}.toast{position:fixed;left:50%;bottom:92px;transform:translateX(-50%);background:#1f2937;color:#fff;padding:10px 14px;border-radius:10px;z-index:80;font-size:13px;max-width:90%;text-align:center}
+@media(max-width:390px){.content{padding:12px}.qtext{font-size:21px}.qtext.q-medium{font-size:19px}.qtext.q-long{font-size:17px}.qtext.q-xlong{font-size:15px}.practice-actions{grid-template-columns:1fr}.stats{gap:6px}.card,.list-card{padding:13px}}
   </style>
 </head>
 <body>
-<div id="loading" class="loading"><div class="spinner"></div></div>
-<div class="app">
-  <header class="topbar">
-    <div class="brand">
-      <div><h1>Maths Revision</h1><small>SSC formula + method recall</small></div>
-      <div class="top-actions"><button class="iconbtn" onclick="toggleTheme()">◐</button><button class="iconbtn" onclick="refreshApp()">↻</button></div>
-    </div>
-  </header>
-  <main id="main"></main>
+<div class="app" id="app">
+  <div class="topbar"><div class="row between"><div><div class="brand">Maths Revision</div><div class="muted" style="font-size:12px" id="subtitle">Loading…</div></div><button class="iconbtn" onclick="refreshApp()">↻</button></div></div>
+  <main id="main"><div class="content"><div class="card">Loading Maths Revision…</div></div></main>
 </div>
-<nav id="nav" class="nav">
-  <button data-view="home" onclick="showView('home')"><b>⌂</b>Home</button>
-  <button data-view="chapters" onclick="showView('chapters')"><b>▤</b>Chapters</button>
-  <button data-view="library" onclick="showView('library')"><b>▦</b>Library</button>
-  <button data-view="ondemand" onclick="showView('ondemand')"><b>◆</b>On Demand</button>
-  <button data-view="progress" onclick="showView('progress')"><b>▥</b>Progress</button>
+<nav class="nav" id="nav">
+  <button data-view="home" onclick="showView('home')"><span class="ico">⌂</span>Home</button>
+  <button data-view="chapters" onclick="showView('chapters')"><span class="ico">▦</span>Chapters</button>
+  <button data-view="library" onclick="showView('library')"><span class="ico">★</span>Library</button>
+  <button data-view="ondemand" onclick="showView('ondemand')"><span class="ico">⚡</span>On Demand</button>
+  <button data-view="more" onclick="showView('more')"><span class="ico">•••</span>More</button>
 </nav>
-<div id="toast" class="toast hidden"></div>
-<div id="modal" class="hidden"></div>
+<div id="modal" class="hidden"></div><div id="toast" class="toast hidden"></div>
 <script>
-const app={bootstrap:null,view:'home',quiz:null,qStart:0};
+const app={bootstrap:null,view:'home',session:null,startedAt:0,revealed:false,selected:null};
 const $=s=>document.querySelector(s);
-const esc=s=>String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
-
-function server(fn,...args){
-  return new Promise((res,rej)=>{
-    const r=google.script.run.withSuccessHandler(res).withFailureHandler(e=>rej(new Error(e&&e.message?e.message:String(e))));
-    if(fn==='getAppBootstrap')r.getAppBootstrap();
-    else if(fn==='startQuiz')r.startQuiz(args[0]);
-    else if(fn==='resumeSession')r.resumeSession(args[0]);
-    else if(fn==='submitRecall')r.submitRecall(args[0]);
-    else if(fn==='setMastered')r.setMastered(args[0],args[1]);
-    else if(fn==='toggleMarked')r.toggleMarked(args[0]);
-    else if(fn==='saveNote')r.saveNote(args[0],args[1]);
-    else if(fn==='finishSession')r.finishSession(args[0]);
-    else rej(new Error('Unknown server function: '+fn));
-  });
-}
-
-function toast(s){const t=$('#toast');t.textContent=s;t.classList.remove('hidden');clearTimeout(t.x);t.x=setTimeout(()=>t.classList.add('hidden'),1800)}
-function loading(on){$('#loading').classList.toggle('hidden',!on)}
-function applyTheme(){document.body.classList.toggle('dark',localStorage.getItem('maths_theme')==='dark')}
-function toggleTheme(){localStorage.setItem('maths_theme',document.body.classList.contains('dark')?'light':'dark');applyTheme()}
-
-async function init(){
-  applyTheme();
-  try{app.bootstrap=await server('getAppBootstrap');loading(false);showView('home')}
-  catch(e){loading(false);$('#main').innerHTML='<div class="content"><div class="card">'+esc(e.message)+'</div></div>'}
-}
-
-async function refreshApp(){
-  loading(true);
-  try{app.bootstrap=await server('getAppBootstrap');loading(false);showView(app.view)}
-  catch(e){loading(false);toast(e.message)}
-}
-
-function nav(v){document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===v))}
-function showView(v){app.view=v;$('#nav').classList.remove('hidden');nav(v);if(v==='home')home();if(v==='chapters')chapters();if(v==='library')library();if(v==='ondemand')ondemand();if(v==='progress')progress()}
-
+function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function toast(t){const x=$('#toast');x.textContent=t;x.classList.remove('hidden');setTimeout(()=>x.classList.add('hidden'),1800)}
+function nav(v){document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===v))}
+function refreshApp(){google.script.run.withSuccessHandler(b=>{app.bootstrap=b;$('#subtitle').textContent=`Day ${b.dashboard.day} · ${b.dashboard.todayChapter}`;showView(app.view==='quiz'?'home':app.view)}).withFailureHandler(e=>toast(e.message||e)).getAppBootstrap()}
+function showView(v){app.view=v;nav(v);$('#nav').classList.remove('hidden');if(v==='home')home();if(v==='chapters')chapters();if(v==='library')library();if(v==='ondemand')ondemand();if(v==='more')more()}
 function home(){
-  const d=app.bootstrap.dashboard,r=app.bootstrap.resume,l=app.bootstrap.library;
-  const pending=(d.pending||[]);
-  const pendingShown=pending.slice(0,2);
-  const pendingHtml=pending.length?`<div class="section-title">Pending</div><div class="list">${pendingShown.map(p=>`<div class="card row between"><div><div class="eyebrow">Day ${p.day} · ${esc(p.chapter)}</div><b>${esc(p.status)}</b><div class="muted" style="font-size:12px">${p.chapterTotal} cards · ${p.chapterRemaining} active</div></div><button class="btn soft" data-day="${p.day}" onclick="beginQuiz('daily',{planDay:Number(this.dataset.day)})">${p.status==='In progress'?'Continue':'Start'}</button></div>`).join('')}${pending.length>pendingShown.length?`<div class="muted" style="font-size:12px;padding:2px 4px">+${pending.length-pendingShown.length} more pending</div>`:''}</div>`:'';
-  $('#main').innerHTML=`<div class="content grid">
-    ${r?`<div class="card row between"><div><div class="eyebrow">Continue where you left off</div><b>${esc(r.title)}</b><div class="muted" style="font-size:12px">Card ${Number(r.currentIndex)+1} of ${r.total}</div></div><button class="btn soft" data-session="${esc(r.sessionId)}" onclick="resumeQuiz(this.dataset.session)">Resume</button></div>`:''}
-    ${pendingHtml}
-    <div class="card hero"><div class="eyebrow">Today's revision · Day ${d.day}</div><div class="row between"><div><h2>${esc(d.todayChapter)}</h2><div class="muted">${d.chapterTotal} core cards · ${d.chapterRemaining} active · ${d.freshRemaining} unseen</div></div><button class="btn primary" data-day="${d.day}" onclick="beginQuiz('daily',{planDay:Number(this.dataset.day)})">Start</button></div></div>
-    <div class="section-title">Study</div>
-    <div class="grid2">
-      <div class="card action-card" onclick="showView('chapters')"><div class="action-icon">📚</div><div><div class="action-title">Chapters</div><div class="muted" style="font-size:12px">Complete permanent banks</div></div></div>
-      <div class="card action-card" onclick="showView('library')"><div class="action-icon">🧠</div><div><div class="action-title">Library</div><div class="muted" style="font-size:12px">Formula, methods, notes</div></div></div>
-      <div class="card action-card" onclick="showView('ondemand')"><div class="action-icon">◆</div><div><div class="action-title">On Demand</div><div class="muted" style="font-size:12px">Custom + chat practice</div></div></div>
-      <div class="card action-card" onclick="showView('progress')"><div class="action-icon">📊</div><div><div class="action-title">Progress</div><div class="muted" style="font-size:12px">Chapter + type mastery</div></div></div>
-    </div>
-    <div class="section-title">Quick revision</div>
-    <div class="grid2">
-      <button class="btn warn" onclick="beginQuiz('library',{cluster:'Marked'})">★ Marked · ${l.marked}</button>
-      <button class="btn ghost" onclick="beginQuiz('library',{cluster:'Formula'})">Σ Formula · ${l.formulas}</button>
-      <button class="btn ghost" onclick="beginQuiz('library',{cluster:'Fractions'})">⅞ Fractions · ${l.fractions}</button>
-      <button class="btn ghost" onclick="beginQuiz('library',{cluster:'Triplets'})">△ Triplets · ${l.triplets}</button>
-    </div>
-    <div class="section-title">Today's chapter</div>
-    <div class="card row between"><div><b>Want extra ${esc(d.todayChapter)}?</b><div class="muted" style="font-size:12px">More cards without changing rotation.</div></div><button class="btn soft" data-chapter="${esc(d.todayChapter)}" onclick="beginQuiz('practice_more',{chapter:this.dataset.chapter})">+ Practice More</button></div>
-    <div class="section-title">Snapshot</div>
-    <div class="grid2"><div class="card"><div class="metric">${d.mastered}</div><div class="muted">Mastered</div></div><div class="card"><div class="metric">${d.total-d.mastered}</div><div class="muted">Still active</div></div></div>
-  </div>`;
+ const d=app.bootstrap.dashboard,p=d.pending||[],pending=p.length?`<div class="section-title">Pending Days</div><div class="list">${p.map(x=>`<div class="list-card"><div class="row between"><div><b>Day ${x.day} · ${esc(x.chapter)}</b><div class="muted" style="font-size:12px">${esc(x.status)} · ${x.remaining} active of ${x.total}</div></div><button class="btn ghost small" data-day="${x.day}" onclick="startDaily(Number(this.dataset.day))">Start</button></div></div>`).join('')}</div>`:'';
+ $('#main').innerHTML=`<div class="content grid"><div class="card hero"><div class="eyebrow" style="color:#dce2ff">Today's revision · Day ${d.day}</div><div class="hero-title">${esc(d.todayChapter)}</div><div class="muted">Schedule advances by calendar day. Missed days stay pending.</div><div class="stats"><div class="stat"><b>${d.chapterRemaining}</b><span>Active</span></div><div class="stat"><b>${d.freshRemaining}</b><span>Fresh</span></div><div class="stat"><b>${d.chapterMastered}</b><span>Mastered</span></div></div><button class="btn" style="width:100%;margin-top:14px;background:#fff;color:#2944b8" onclick="startDaily(${d.day})">Start Day ${d.day}</button></div>${pending}<div class="grid2"><div class="card action-card" onclick="beginQuiz('practice_more',{chapter:'${esc(d.todayChapter)}',count:20})"><div class="action-icon">＋</div><div><div class="action-title">Practice More</div><div class="muted" style="font-size:12px">Today's chapter</div></div></div><div class="card action-card" onclick="showView('library')"><div class="action-icon">★</div><div><div class="action-title">Marked</div><div class="muted" style="font-size:12px">${d.marked} saved</div></div></div></div></div>`;
 }
-
-function findChapterInfo(name){return (app.bootstrap.chapters||[]).find(c=>c.chapter===name)||null}
+function startDaily(day){beginQuiz('daily',{planDay:Number(day)})}
 function chapters(){
-  const list=app.bootstrap.chapters||[];
-  $('#main').innerHTML=`<div class="content"><div class="section-title">Chapters</div><div class="list">${list.map(c=>`<div class="list-card topic-row" data-chapter="${esc(c.chapter)}" onclick="openChapterHub(this.dataset.chapter)"><div class="row between"><div><b>${esc(c.chapter)}</b><div class="muted">${c.total} total · ${c.mastered} mastered · ${c.remaining} active</div></div><button class="btn soft small">Open</button></div></div>`).join('')}</div></div>`;
+ const cs=app.bootstrap.chapters||[];
+ $('#main').innerHTML=`<div class="content"><div class="section-title">Chapters</div><div class="list">${cs.map(c=>`<div class="list-card topic-row" data-chapter="${esc(c.chapter)}" onclick="openChapterHub(this.dataset.chapter)"><div class="row between"><div><b>${esc(c.chapter)}</b><div class="muted">${c.total} total · ${c.mastered} mastered · ${c.remaining} active</div></div><span class="tag">Open</span></div></div>`).join('')}</div></div>`;
 }
+function findChapterInfo(chapter){return (app.bootstrap.chapters||[]).find(c=>String(c.chapter)===String(chapter))}
 function openChapterHub(chapter){
   const c=findChapterInfo(chapter);if(!c){toast('Chapter not found');return}app.view='chapters';nav('chapters');
   const topics=c.majorTopics||[];
@@ -119,15 +53,13 @@ function openTopicHub(chapter,majorTopicKey){
   app.view='chapters';nav('chapters');
   $('#main').innerHTML=`<div class="content"><button class="btn ghost" data-chapter="${esc(chapter)}" onclick="openChapterHub(this.dataset.chapter)">← ${esc(chapter)}</button><div class="section-title">${esc(chapter).toUpperCase()} → ${esc(t.name).toUpperCase()}</div><div class="card"><div class="hub-stats"><div class="hub-stat"><b>${t.total}</b><span class="muted">Total</span></div><div class="hub-stat"><b>${t.mastered}</b><span class="muted">Mastered</span></div><div class="hub-stat"><b>${t.active}</b><span class="muted">Active</span></div></div><div class="practice-actions"><button class="btn soft" data-chapter="${esc(chapter)}" data-topic-key="${esc(t.key)}" onclick="beginQuiz('topic_random',{chapter:this.dataset.chapter,majorTopicKey:this.dataset.topicKey,count:20})">🔀 Random ${esc(t.name)}</button><button class="btn ghost" data-chapter="${esc(chapter)}" data-topic-key="${esc(t.key)}" onclick="beginQuiz('topic_weak',{chapter:this.dataset.chapter,majorTopicKey:this.dataset.topicKey,count:20})">🎯 Weak ${esc(t.name)}</button><button class="btn ghost" data-chapter="${esc(chapter)}" data-topic-key="${esc(t.key)}" onclick="beginQuiz('topic_complete',{chapter:this.dataset.chapter,majorTopicKey:this.dataset.topicKey})">📚 Complete ${esc(t.name)} Bank</button></div></div></div>`;window.scrollTo(0,0)
 }
-
 function library(){
   const l=app.bootstrap.library;
   const items=[['Formula','Σ',l.formulas],['Methods','⚡',l.methods],['Fractions','⅞',l.fractions],['Triplets','△',l.triplets],['Marked','★',l.marked],['Notes','📝',l.notes],['Recent','＋',l.recent]];
   $('#main').innerHTML=`<div class="content"><div class="section-title">Library</div><div class="grid2">${items.map(x=>`<div class="card action-card" data-cluster="${x[0]}" onclick="beginQuiz('library',{cluster:this.dataset.cluster})"><div class="action-icon">${x[1]}</div><div><div class="action-title">${x[0]}</div><div class="muted" style="font-size:12px">${x[2]} cards</div></div></div>`).join('')}</div></div>`;
 }
-
 function ondemand(){
-  const ch=(app.bootstrap.chapters||[]).map(x=>x.chapter),sets=app.bootstrap.demandSets||[];
+  const ch=(app.bootstrap.chapters||[]).map(x=>x.chapter),sets=(app.bootstrap.demandSets||[]).filter(s=>String(s.setId)==='CALC_TRAINING');
   $('#main').innerHTML=`<div class="content grid">
     <div class="section-title">On Demand</div>
     <div class="card">
@@ -146,13 +78,12 @@ function ondemand(){
       </div>
     </div>
     <div class="card">
-      <div class="eyebrow">My Demand Sets</div>
-      <div class="muted" style="font-size:14px;margin:6px 0 12px">Only sets you explicitly ask me in chat to preserve appear here.</div>
-      ${sets.length?`<div class="list">${sets.map(s=>`<div class="list-card"><div class="row between"><div><b>${esc(s.name)}</b><div class="muted" style="font-size:13px">${s.setId==='CALC_TRAINING'?(s.dayCount||0)+' days · '+s.count+' questions':s.count+' questions'+(s.createdAt?' · '+esc(s.createdAt):'')}</div>${s.setId==='CALC_TRAINING'?`<div class="muted" style="font-size:12px;margin-top:4px">30-day SSC CGL calculation-speed program</div>`:(s.description?`<div class="muted" style="font-size:12px;margin-top:4px">${esc(s.description)}</div>`:'')}</div><button class="btn soft small" data-set-id="${esc(s.setId)}" onclick="${s.setId==='CALC_TRAINING'?'openCalculationHub(this.dataset.setId)':'startDemandSet(this.dataset.setId)'}">${s.setId==='CALC_TRAINING'?'Open':'Practice'}</button></div></div>`).join('')}</div>`:`<div class="muted" style="font-size:14px">No preserved demand set yet.</div>`}
+      <div class="eyebrow">Calculation Training</div>
+      <div class="muted" style="font-size:14px;margin:6px 0 12px">Your dedicated calculation-speed program stays here. Saved mocks are now under Chapters → Mocks.</div>
+      ${sets.length?`<div class="list">${sets.map(s=>`<div class="list-card"><div class="row between"><div><b>${esc(s.name)}</b><div class="muted" style="font-size:13px">${(s.dayCount||0)} days · ${s.count} questions</div><div class="muted" style="font-size:12px;margin-top:4px">30-day SSC CGL calculation-speed program</div></div><button class="btn soft small" data-set-id="${esc(s.setId)}" onclick="openCalculationHub(this.dataset.setId)">Open</button></div></div>`).join('')}</div>`:`<div class="muted" style="font-size:14px">Calculation Training is not available yet.</div>`}
     </div>
   </div>`;
 }
-
 function runOD(){beginQuiz('ondemand',{chapter:$('#odChapter').value,count:Number($('#odCount').value),activeOnly:true})}
 function startDemandSet(setId){beginQuiz('demand_set',{setId:String(setId),activeOnly:false})}
 function openCalculationHub(setId){
@@ -160,274 +91,56 @@ function openCalculationHub(setId){
   if(!set){toast('Calculation Training set not found.');return}
   app.view='calc_training';nav('ondemand');$('#nav').classList.remove('hidden');
   const days=(set.days||[]).slice().reverse();
-  $('#main').innerHTML=`<div class="content grid"><div class="row" style="margin-bottom:2px"><button class="btn ghost" onclick="showView('ondemand')">← Back</button><div><div class="eyebrow">My Demand Set</div><div class="quiz-title">Calculation Training</div></div></div>
+  $('#main').innerHTML=`<div class="content grid"><div class="row" style="margin-bottom:2px"><button class="btn ghost" onclick="showView('ondemand')">← Back</button><div><div class="eyebrow">Calculation Training</div><div class="quiz-title">Calculation Training</div></div></div>
     <div class="grid2">
       <div class="card action-card" onclick="startCalcHubMode('mixed')"><div class="action-icon">⚡</div><div><div class="action-title">Mixed Revision</div><div class="muted" style="font-size:12px">Weighted across all days</div></div></div>
       <div class="card action-card" onclick="startCalcHubMode('random')"><div class="action-icon">🔀</div><div><div class="action-title">Random Practice</div><div class="muted" style="font-size:12px">Random questions from all days</div></div></div>
       <div class="card action-card" onclick="startCalcHubMode('weak')"><div class="action-icon">🎯</div><div><div class="action-title">Weak Practice</div><div class="muted" style="font-size:12px">Wrong and slow calculations first</div></div></div>
     </div>
-    <div class="section-title">Daily Training</div>
-    <div class="list">${days.map(d=>`<div class="list-card row between"><div><b>Day ${d.dayNumber}</b><div class="muted" style="font-size:13px">${esc(d.dateLabel)} · ${d.count} questions</div></div><button class="btn soft small" data-day="${esc(d.key)}" onclick="startCalcDay(this.dataset.day)">Practice</button></div>`).join('')||'<div class="muted">No daily training added yet.</div>'}</div></div>`;
-  window.scrollTo(0,0);
+    <div class="section-title">Days</div><div class="list">${days.map(d=>`<div class="list-card"><div class="row between"><div><b>Day ${d.day}</b><div class="muted" style="font-size:12px">${d.count} questions</div></div><button class="btn ghost small" data-day="${d.day}" onclick="startCalcDay(Number(this.dataset.day))">Practice</button></div></div>`).join('')}</div></div>`;window.scrollTo(0,0)
 }
-function startCalcDay(key){beginQuiz('demand_set',{setId:'CALC_TRAINING',calcMode:'day',calcDayKey:String(key),activeOnly:false})}
-function startCalcHubMode(mode){beginQuiz('demand_set',{setId:'CALC_TRAINING',calcMode:String(mode),count:30,activeOnly:false})}
-
-function progress(){
-  const d=app.bootstrap.dashboard;
-  $('#main').innerHTML=`<div class="content grid"><div class="section-title">Progress</div><div class="grid2"><div class="card"><div class="metric">${d.mastered}</div><div class="muted">Mastered</div></div><div class="card"><div class="metric">${d.attempted}</div><div class="muted">Attempted</div></div><div class="card"><div class="metric">${d.fractions}</div><div class="muted">Fraction cards</div></div><div class="card"><div class="metric">${d.triplets}</div><div class="muted">Triplet cards</div></div></div></div>`;
+function startCalcHubMode(mode){beginQuiz('demand_set',{setId:'CALC_TRAINING',calcMode:mode,count:20})}
+function startCalcDay(day){beginQuiz('demand_set',{setId:'CALC_TRAINING',calcMode:'day',day:Number(day),count:100})}
+function more(){
+ $('#main').innerHTML=`<div class="content grid"><div class="section-title">More</div><div class="card"><b>Maths Revision</b><div class="muted" style="margin-top:5px">Mobile-first SSC revision engine.</div></div><div class="card"><div class="row between"><div><b>Progress</b><div class="muted" style="font-size:12px">Attempts, mastered and marked</div></div><span class="tag">${app.bootstrap.dashboard.attempted} attempted</span></div></div></div>`;
 }
-
-async function beginQuiz(mode,opts={}){
-  loading(true);
-  try{
-    const x=await server('startQuiz',Object.assign({mode},opts));
-    loading(false);
-    if(!x.ok){toast(x.message);return}
-    openQuiz(x);
-  }catch(e){loading(false);toast(e.message)}
-}
-
-async function resumeQuiz(id){
-  loading(true);
-  try{
-    const x=await server('resumeSession',id);
-    loading(false);
-    if(!x.ok){toast(x.message);return}
-    openQuiz(x);
-  }catch(e){loading(false);toast(e.message)}
-}
-
-function openQuiz(x){
-  app.quiz={sessionId:x.sessionId,title:x.title,mode:x.mode,questions:x.questions,index:Math.min(Number(x.currentIndex||0),x.questions.length-1),calcMeta:x.calcMeta||null,planDay:x.planDay||null,planChapter:x.planChapter||'',majorTopic:x.majorTopic||''};
-  $('#nav').classList.add('hidden');
-  app.qStart=Date.now();
-  renderQuestion();
-  window.scrollTo(0,0);
-}
-
-function calcSwitchHtml(){
-  const m=app.quiz&&app.quiz.calcMeta;
-  if(!m||!m.isCalculationTraining)return '';
-  const isMixed=m.currentKey==='MIXED';
-  const options=(m.days||[]).slice().reverse().map(d=>`<option value="${esc(d.key)}" ${!isMixed&&m.currentKey===d.key?'selected':''}>${esc(d.label)} · ${d.count}Q</option>`).join('');
-  return `<div class="calc-switch"><select aria-label="Calculation Training day" onchange="switchCalcDay(this.value)">${isMixed?'<option selected value="">Mixed Revision</option>':''}${options}</select><button class="btn ${isMixed?'soft':'ghost'}" onclick="startCalcMixed()">Mixed</button></div>`;
-}
-
-function switchCalcDay(key){if(!key)return;beginQuiz('demand_set',{setId:'CALC_TRAINING',calcMode:'day',calcDayKey:key,activeOnly:false})}
-function startCalcMixed(){beginQuiz('demand_set',{setId:'CALC_TRAINING',calcMode:'mixed',count:30,activeOnly:false})}
-
-function questionSizeClass(prompt){const n=String(prompt||'').trim().length;if(n>320)return 'q-xlong';if(n>180)return 'q-long';if(n>90)return 'q-medium';return ''}
-function adjustQuestionFont(){
-  const el=document.querySelector('.question');if(!el)return;
-  const rank={'':0,'q-medium':1,'q-long':2,'q-xlong':3};
-  const first=questionSizeClass(el.textContent||'');
-  const cs=getComputedStyle(el),lh=parseFloat(cs.lineHeight)||Math.max(20,parseFloat(cs.fontSize)*1.4),h=el.getBoundingClientRect().height;
-  const lines=Math.max(1,Math.round(h/lh));
-  let measured=lines<=2?'':lines===3?'q-medium':lines<=5?'q-long':'q-xlong';
-  const cls=(rank[first]||0)>(rank[measured]||0)?first:measured;
-  el.classList.remove('q-medium','q-long','q-xlong','q-visual-medium','q-visual-long','q-visual-xlong');
-  if(cls==='q-medium')el.classList.add('q-visual-medium');else if(cls==='q-long')el.classList.add('q-visual-long');else if(cls==='q-xlong')el.classList.add('q-visual-xlong');
-}
-
-const unsupportedDiagramTypes=new Set();
-function diagramData(q){
-  if(!q||!q.diagramType||!q.diagramJson)return null;
-  try{const d=JSON.parse(q.diagramJson);if(!d||Array.isArray(d)||typeof d!=='object'||!Object.keys(d).length||d.show===false)return null;return d}catch(e){return null}
-}
-function sx(x){return Number.isFinite(Number(x))?Number(x):0}
-function sLine(x1,y1,x2,y2,cls='shape'){return `<line class="${cls}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`}
-function sText(x,y,t,anchor='middle'){return `<text x="${x}" y="${y}" text-anchor="${anchor}">${esc(t)}</text>`}
-function sCircle(cx,cy,r,cls='shape'){return `<circle class="${cls}" cx="${cx}" cy="${cy}" r="${r}"/>`}
-function sPt(x,y,label,dx=0,dy=-8){return `<circle class="pt" cx="${x}" cy="${y}" r="3"/>${label?sText(x+dx,y+dy,label):''}`}
-function sPoly(points,cls='shape'){return `<polyline class="${cls}" points="${points.map(p=>p.join(',')).join(' ')}"/>`}
-function rightMark(x,y,size=10){return `<path class="thin" d="M ${x} ${y-size} L ${x+size} ${y-size} L ${x+size} ${y}"/>`}
-function diagramMetaText(d){
-  if(!d||typeof d!=='object')return'';const a=[];const add=v=>{if(v===null||v===undefined||v===''||typeof v==='boolean')return;const x=String(v);if(x&&x.length<90&&!a.includes(x))a.push(x)};const addObj=(o,prefix='')=>{if(!o||typeof o!=='object'||Array.isArray(o))return;Object.keys(o).slice(0,5).forEach(k=>{const v=o[k];if(typeof v==='string'||typeof v==='number')add((prefix?prefix+' ':'')+k+'='+v)})};
-  if(Array.isArray(d.points))d.points.slice(0,5).forEach(add);if(Array.isArray(d.triangle))d.triangle.slice(0,4).forEach(add);else addObj(d.triangle);
-  addObj(d.bases);addObj(d.sides);addObj(d.sideLabels);addObj(d.angles);addObj(d.squaredSides);
-  ['height','radius','centerDistance','midSegment','relation','visualRelation','distance','perpendicularDistance','angle','diameter','circumradius','inradius'].forEach(k=>add(d[k]));
-  ['parallel','chords','tangents','diagonals','radii','relations','equalSides','equalAngles'].forEach(k=>{if(Array.isArray(d[k]))d[k].slice(0,4).forEach(add)});
-  return a.slice(0,6).join(' · ')
-}
-function svgFrame(body,d){const nts=d&&((d.notToScale===true)||String(d.note||'').toLowerCase().includes('not drawn to scale'));const meta=diagramMetaText(d);return `<div class="diagram-wrap"><svg class="math-diagram" viewBox="0 0 360 220" role="img" aria-label="Mathematical diagram">${body}</svg>${meta?`<div class="diagram-data">${esc(meta)}</div>`:''}${nts?'<div class="diagram-note">Not drawn to scale</div>':''}</div>`}
-
-function renderLinesDiagram(type,d){
-  let b='';
-  if(type==='line_segment_compare'){b+=sLine(35,55,325,55)+sText(180,40,'Line AB');b+=sLine(75,155,285,155)+sPt(75,155,'C',0,22)+sPt(285,155,'D',0,22)+sText(180,185,'Segment CD');return svgFrame(b,d)}
-  if(type.includes('parallel')||type.includes('transversal')){b+=sLine(45,65,315,65)+sLine(45,155,315,155);b+=sText(55,55,'A')+sText(305,55,'B')+sText(55,178,'C')+sText(305,178,'D');b+=sLine(125,20,235,205);if(type.includes('distance')){b+=sLine(260,65,260,155,'dash')+rightMark(260,65)+rightMark(260,155, -10)}return svgFrame(b,d)}
-  if(type.includes('perpendicular')){b+=sLine(35,110,325,110)+sLine(180,25,180,195)+rightMark(180,110);b+=sPt(180,110,'O',14,-8);return svgFrame(b,d)}
-  if(type.includes('collinear')||type==='two_points_one_line'){b+=sLine(35,120,325,80);[[90,112,'A'],[180,100,'B'],[270,88,'C']].forEach(p=>b+=sPt(...p));return svgFrame(b,d)}
-  if(type.includes('concurrent')||type.includes('intersecting')||type.includes('vertical_angles')){[[45,45,315,175],[45,175,315,45],[180,20,180,200]].slice(0,type.includes('concurrent')?3:2).forEach(x=>b+=sLine(...x));b+=sPt(180,110,'O',14,-8);return svgFrame(b,d)}
-  const O=[100,160];b+=sLine(O[0],O[1],310,160)+sLine(O[0],O[1],245,45);if(type.includes('bisector'))b+=sLine(O[0],O[1],285,95,'dash');b+=sPt(O[0],O[1],'O',-12,20)+sText(305,180,'A')+sText(245,35,'B');return svgFrame(b,d)
-}
-
-function renderTriangleDiagram(type,d){
-  const right=type.includes('right_triangle')||type==='special_triangle'||d.rightAngle||d.shape==='right_triangle'||d.shape==='right_isosceles_triangle';
-  const A=right?[70,175]:[180,28],B=right?[295,175]:[55,185],C=right?[70,45]:[305,185];let b=sPoly([A,B,C,A]);b+=sPt(...A,'A',-10,-8)+sPt(...B,'B',8,18)+sPt(...C,'C',10,-8);if(right)b+=rightMark(A[0],A[1]);
-  const mid=[(B[0]+C[0])/2,(B[1]+C[1])/2];
-  if(type.includes('median')||type==='centroid'){b+=sPt(...mid,'D',0,20)+sLine(...A,...mid,'thin');if(type==='centroid'){const E=[(A[0]+C[0])/2,(A[1]+C[1])/2],F=[(A[0]+B[0])/2,(A[1]+B[1])/2];b+=sLine(...B,...E,'thin')+sLine(...C,...F,'thin');const G=[(A[0]+B[0]+C[0])/3,(A[1]+B[1]+C[1])/3];b+=sPt(...G,'G',14,0)}}
-  if(type.includes('incenter')){const I=[180,125];b+=sLine(...A,...I,'dash')+sLine(...B,...I,'dash')+sLine(...C,...I,'dash')+sCircle(I[0],I[1],32,'thin')+sPt(...I,'I',12,0)}
-  if(type.includes('circumcenter')||type.includes('circumradius')||type.includes('circumcircle')){const O=[180,112];b+=sCircle(180,112,92,'thin')+sPt(...O,'O',12,0);b+=sLine(...O,...A,'thin')}
-  if(type.includes('orthocenter')){const H=[180,118];b+=sLine(A[0],A[1],mid[0],mid[1],'dash')+sLine(B[0],B[1],235,82,'dash')+sPt(...H,'H',12,0)}
-  if(type.includes('angle_bisector')){b+=sLine(...A,...mid,'dash')+sText(190,75,'equal angles')}
-  if(type.includes('midpoint_theorem')){const D=[(A[0]+B[0])/2,(A[1]+B[1])/2],E=[(A[0]+C[0])/2,(A[1]+C[1])/2];b+=sPt(...D,'D',-10,12)+sPt(...E,'E',10,12)+sLine(...D,...E,'thin')+sText(180,125,'DE ∥ BC')}
-  if(type.includes('equilateral'))b+=sText(180,205,'equal sides');
-  if(type==='triangle_height'||type.includes('isosceles_height')){b+=sLine(...A,...mid,'dash')+rightMark(mid[0],mid[1],-10)+sText(mid[0]+16,(A[1]+mid[1])/2,'h','start')}
-  if(type.includes('similar')||type.includes('congruent')){let b2=sPoly([[245,60],[215,125],[325,125],[245,60]],'thin');b2+=sText(270,145,type.includes('similar')?'corresponding triangles':'matching marks');b+=b2}
-  return svgFrame(b,d)
-}
-
-function renderCircleDiagram(type,d){
-  if(type.includes('two_circles')||type.includes('common_tangent')){let b=sCircle(110,115,52)+sCircle(250,115,36)+sPt(110,115,'O₁')+sPt(250,115,'O₂');b+=sLine(65,48,286,69,'thin')+sLine(65,182,286,160,'thin');if(String(d.tangentType||'').toLowerCase()==='transverse')b+=sLine(60,65,286,160,'dash');return svgFrame(b,d)}
-  const O=[180,110],r=80;let b=sCircle(...O,r)+sPt(...O,'O',12,3);
-  if(type==='sector'){const p1=[260,110],p2=[220,43];b+=sLine(...O,...p1)+sLine(...O,...p2)+sText(225,92,String(d.labels&&d.labels[2]||'θ°'))+sText(220,125,'r');return svgFrame(b,d)}
-  if(type.includes('semicircle')){const A=[100,110],B=[260,110],C=[180,30];b+=sLine(...A,...B)+sLine(...A,...C,'thin')+sLine(...B,...C,'thin')+sPt(...A,'A',-10,18)+sPt(...B,'B',10,18)+sPt(...C,'C');return svgFrame(b,d)}
-  if(type.includes('cyclic')){const pts=[[130,45],[240,55],[255,150],[105,160]];b+=sPoly([...pts,pts[0]],'thin');['A','B','C','D'].forEach((x,i)=>b+=sPt(...pts[i],x));return svgFrame(b,d)}
-  if(type.includes('tangent')){const T=[260,110],P=[330,45];b+=sPt(...T,'T',8,18)+sLine(...O,...T,'thin')+sLine(260,25,260,195);b+=rightMark(260,110,-10);if(type.includes('two_tangents')){const P2=[330,110],A=[227,42],B=[227,178];b+=sPt(...P2,'P',10,0)+sLine(...P2,...A)+sLine(...P2,...B)+sLine(...O,...A,'thin')+sLine(...O,...B,'thin')}else if(type.includes('secant')){b+=sPt(...P,'P')+sLine(...P,80,170,'thin')}return svgFrame(b,d)}
-  if(type.includes('secants')){const P=[330,110];b+=sPt(...P,'P',10,0)+sLine(...P,80,55)+sLine(...P,85,170);return svgFrame(b,d)}
-  if(type.includes('intersecting_chords')){b+=sLine(115,55,245,165)+sLine(105,160,250,60)+sPt(180,110,'P',12,0);return svgFrame(b,d)}
-  if(type.includes('chord')){b+=sLine(120,65,240,65)+sPt(120,65,'A',-10,-8)+sPt(240,65,'B',10,-8);b+=sLine(...O,180,65,'dash')+rightMark(180,65);if(type==='circle_chords'){b+=sLine(120,155,240,155)+sLine(...O,180,155,'dash')}return svgFrame(b,d)}
-  if(type.includes('angles')){const A=[115,65],B=[245,65],C=[180,190];b+=sLine(...A,...B)+sLine(...O,...A,'thin')+sLine(...O,...B,'thin')+sLine(...C,...A,'thin')+sLine(...C,...B,'thin');['A','B','C'].forEach((x,i)=>b+=sPt(...[A,B,C][i],x));return svgFrame(b,d)}
-  if(type.includes('radius')||type==='circle'){b+=sLine(...O,260,110)+sText(220,100,'r');b+=sLine(100,110,260,110,'thin');return svgFrame(b,d)}
-  return svgFrame(b,d)
-}
-
-function renderQuadDiagram(type,d){
-  let pts;
-  if(type.includes('trapezium'))pts=[[85,55],[270,55],[320,175],[45,175]];
-  else if(type.includes('parallelogram'))pts=[[95,55],[285,55],[250,175],[60,175]];
-  else if(type.includes('rhombus'))pts=[[180,35],[300,110],[180,185],[60,110]];
-  else if(type.includes('kite'))pts=[[180,30],[275,100],[180,190],[95,100]];
-  else if(type.includes('rectangle'))pts=[[70,50],[290,50],[290,175],[70,175]];
-  else if(type.includes('square'))pts=[[105,40],[255,40],[255,190],[105,190]];
-  else pts=[[90,45],[270,55],[310,145],[210,190],[70,160],[90,45]];
-  if(pts[pts.length-1]!==pts[0])pts=[...pts,pts[0]];let b=sPoly(pts);const labels=['A','B','C','D'];pts.slice(0,4).forEach((p,i)=>b+=sPt(...p,labels[i],i<2?0:0,i<2?-9:18));
-  if(type.includes('diagonal')||type.includes('rhombus')||type.includes('square')||type.includes('rectangle_circum')){b+=sLine(...pts[0],...pts[2],'thin')+sLine(...pts[1],...pts[3],'thin')}
-  if(type.includes('trapezium')){b+=sText(180,42,'parallel base')+sText(180,205,'parallel base');if(type.includes('midline'))b+=sLine(72,115,295,115,'dash')+sText(180,108,'mid-segment');if(type.includes('area'))b+=sLine(110,55,110,175,'dash')+rightMark(110,175,-10)+sText(122,118,'h','start')}
-  if(type.includes('path')){b+=`<rect class="thin" x="100" y="72" width="160" height="82"/>`}
-  return svgFrame(b,d)
-}
-
-function renderCoordinateDiagram(type,d){
-  if(type==='coordinate_plane_3d'){let b=sLine(180,110,325,110)+sLine(180,110,180,20)+sLine(180,110,75,190)+sText(330,114,'x')+sText(185,25,'z')+sText(70,202,'y');return svgFrame(b,d)}
-  let b=sLine(30,110,330,110,'thin')+sLine(180,205,180,18,'thin')+sText(333,105,'x')+sText(188,22,'y')+sPt(180,110,'O',12,15);
-  if(type.includes('reflection')){b+=sLine(75,180,285,40)+sPt(235,65,"P")+sPt(125,155,"P′")}
-  else if(type.includes('parallel')){b+=sLine(55,75,305,35)+sLine(55,165,305,125)}
-  else if(type.includes('perpendicular')){b+=sLine(60,170,300,45)+sLine(100,35,260,185)}
-  else if(type.includes('triangle')||type.includes('centroid')||type.includes('median')||type.includes('incenter')||type.includes('circumcenter')||type.includes('orthocenter')){b+=sPoly([[95,165],[270,165],[135,45],[95,165]]);b+=sPt(95,165,'A')+sPt(270,165,'B')+sPt(135,45,'C')}
-  else if(type.includes('section')||type.includes('midpoint')){b+=sLine(75,165,285,55)+sPt(75,165,'A')+sPt(285,55,'B')+sPt(180,110,type.includes('midpoint')?'M':'P')}
-  else if(type.includes('distance')){b+=sPt(95,155,'A')+sPt(270,55,'B')+sLine(95,155,270,55)+sLine(95,155,270,155,'dash')+sLine(270,155,270,55,'dash')}
-  else if(type.includes('collinear')){b+=sLine(60,165,300,55)+sPt(100,147,'A')+sPt(180,110,'B')+sPt(260,73,'C')}
-  else if(type.includes('linear_system')){b+=sLine(55,175,305,45)+sLine(55,50,305,165)}
-  else{b+=sLine(60,170,300,50)+sPt(115,143,'P')}
-  return svgFrame(b,d)
-}
-
-function renderSolidDiagram(type,d){
-  let b='';
-  if(type.includes('sphere')){b=sCircle(180,110,72)+`<ellipse class="thin" cx="180" cy="110" rx="72" ry="22"/>`+sLine(180,110,245,110,'thin')+sText(215,100,'r');return svgFrame(b,d)}
-  if(type.includes('hemisphere')){b=`<path class="shape" d="M 100 110 A 80 80 0 0 0 260 110"/>`+`<ellipse class="thin" cx="180" cy="110" rx="80" ry="24"/>`+sText(215,103,'r');return svgFrame(b,d)}
-  if(type.includes('cylinder')){b=`<ellipse class="shape" cx="180" cy="50" rx="70" ry="24"/><ellipse class="shape" cx="180" cy="170" rx="70" ry="24"/>`+sLine(110,50,110,170)+sLine(250,50,250,170)+sText(265,112,'h','start')+sText(215,45,'r');if(type.includes('hollow'))b+=`<ellipse class="thin" cx="180" cy="50" rx="38" ry="13"/>`;return svgFrame(b,d)}
-  if(type.includes('cone')||type.includes('frustum')){if(type.includes('frustum')){b=`<ellipse class="shape" cx="180" cy="62" rx="42" ry="14"/><ellipse class="shape" cx="180" cy="170" rx="82" ry="25"/>`+sLine(138,62,98,170)+sLine(222,62,262,170)}else{b=`<ellipse class="shape" cx="180" cy="172" rx="82" ry="25"/>`+sLine(180,30,98,172)+sLine(180,30,262,172)+sLine(180,30,180,172,'dash')}b+=sText(195,105,'h')+sText(240,100,'l');return svgFrame(b,d)}
-  if(type.includes('cube')||type.includes('cuboid')||type.includes('box')){const f=[[90,70],[235,70],[235,175],[90,175],[90,70]],q=[[135,35],[280,35],[280,140],[235,175]];b=sPoly(f)+sPoly(q)+sLine(90,70,135,35)+sLine(235,70,280,35)+sLine(90,175,135,140,'dash')+sLine(135,140,280,140,'dash');return svgFrame(b,d)}
-  if(type.includes('pyramid')||type.includes('tetrahedron')){const apex=[180,28],base=[[85,150],[245,180],[300,120],[135,95]];b=sPoly([...base,base[0]]);base.forEach(p=>b+=sLine(...apex,...p,'thin'));return svgFrame(b,d)}
-  if(type.includes('prism')){b=sPoly([[80,70],[190,50],[250,100],[140,120],[80,70]])+sPoly([[105,145],[215,125],[275,175],[165,195],[105,145]])+sLine(80,70,105,145)+sLine(190,50,215,125)+sLine(250,100,275,175)+sLine(140,120,165,195);return svgFrame(b,d)}
-  if(type.includes('capsule')){b=`<path class="shape" d="M 105 65 L 255 65 A 45 45 0 0 1 255 155 L 105 155 A 45 45 0 0 1 105 65"/>`+sText(180,185,'cylinder + two hemispheres');return svgFrame(b,d)}
-  b=sCircle(135,110,45)+`<rect class="shape" x="180" y="65" width="95" height="90"/>`;return svgFrame(b,d)
-}
-
-function renderTrigDiagram(type,d){
-  if(type.includes('quadrant')){let b=sLine(25,110,335,110)+sLine(180,200,180,20);b+=sText(250,60,'I · All +')+sText(105,60,'II · sin +')+sText(105,165,'III · tan +')+sText(250,165,'IV · cos +');return svgFrame(b,d)}
-  if(type.includes('unit_circle')){let b=sCircle(180,110,75)+sLine(35,110,325,110,'thin')+sLine(180,195,180,25,'thin')+sLine(180,110,242,68)+sLine(180,110,242,152,'dash');return svgFrame(b,d)}
-  if(type.includes('standard_values')){let b=sLine(45,180,315,180);[0,30,45,60,90].forEach((a,i)=>{const rad=a*Math.PI/180,x=70+120*Math.cos(rad),y=180-120*Math.sin(rad);b+=sLine(70,180,x,y,'thin')+sText(x,y-5,a+'°')});return svgFrame(b,d)}
-  let b=sPoly([[65,180],[300,180],[65,45],[65,180]])+rightMark(65,180)+sText(185,198,'B')+sText(45,110,'P')+sText(190,103,'H')+sText(90,160,'θ');return svgFrame(b,d)
-}
-
-function renderDiagram(q){
-  const d=diagramData(q);if(!d)return'';const type=String(q.diagramType||'').toLowerCase();if(!type)return'';
-  if(type.startsWith('coordinate_'))return renderCoordinateDiagram(type,d);
-  if(type.startsWith('trig_'))return renderTrigDiagram(type,d);
-  if(type==='angle_bisector' && !(d.shape==='triangle'||d.triangle||d.vertices))return renderLinesDiagram(type,d);
-  if(/triangle|median|centroid|incenter|circumcenter|orthocenter|similar|congruent|angle_bisector|midpoint|equilateral|isosceles|right_circumcircle/.test(type)||d.shape==='triangle'||d.shape==='right_triangle'||d.shape==='equilateral_triangle')return renderTriangleDiagram(type,d);
-  if(/cuboid|cube|box|cylinder|cone|frustum|sphere|hemisphere|solid|capsule|prism|pyramid|tetrahedron|recasting/.test(type))return renderSolidDiagram(type,d);
-  if(/trapezium|parallelogram|rectangle|rhombus|square|kite|quadrilateral|polygon|hexagon|path/.test(type))return renderQuadDiagram(type,d);
-  if(/circle|chord|tangent|secant|cyclic|semicircle|sector|two_circles|common_tangent/.test(type))return renderCircleDiagram(type,d);
-  if(/line|angle|parallel|transversal|collinear|intersect|complement|supplement|perpendicular|coplanar|concurrent/.test(type))return renderLinesDiagram(type,d);
-  unsupportedDiagramTypes.add(type);return'';
-}
-
+function beginQuiz(mode,opts){google.script.run.withSuccessHandler(openQuiz).withFailureHandler(e=>toast(e.message||e)).startQuiz(Object.assign({mode},opts||{}))}
+function openQuiz(s){if(!s||s.ok===false){toast((s&&s.message)||'No questions');return}app.session=s;app.view='quiz';app.revealed=false;app.selected=null;app.startedAt=Date.now();$('#nav').classList.add('hidden');renderQuestion()}
+function questionSizeClass(text){const t=String(text||'').replace(/<[^>]*>/g,'').trim(),len=t.length,breaks=(t.match(/\n/g)||[]).length;if(len>360||breaks>=5)return'q-xlong';if(len>240||breaks>=3)return'q-long';if(len>135||breaks>=2)return'q-medium';return''}
 function renderQuestion(){
-  const q=app.quiz.questions[app.quiz.index],i=app.quiz.index,total=app.quiz.questions.length,pct=((i+1)/total)*100,isMcq=q.answerMode==='MCQ',qSize=questionSizeClass(q.prompt),diagram=renderDiagram(q);
-  const options=isMcq?`<div class="options">${(q.options||[]).map(o=>`<button id="opt${o.key}" class="option" onclick="chooseOption('${o.key}')"><span class="letter">${o.key}</span><span>${esc(o.text)}</span></button>`).join('')}</div>`:`<button id="showBtn" class="btn primary" style="width:100%" onclick="revealAnswer()">Show Answer</button>`;
-
-  $('#main').innerHTML=`<div class="quiz-wrap">
-    <div class="quiz-head"><div><div class="eyebrow">${esc(q.cardType||'Maths')} · ${esc(q.answerMode)}</div><div class="quiz-title">${esc(app.quiz.title)}</div></div><div class="tag">${i+1}/${total}</div></div>
-    <div class="progressbar"><div style="width:${pct}%"></div></div>
-    <div class="meta">${q.topic?`<span class="tag">${esc(q.topic)}</span>`:''}${q.subtopic?`<span class="tag">${esc(q.subtopic)}</span>`:''}<span class="tag">${esc(q.difficulty)}</span></div>
-    <div class="question-card"><div class="question ${qSize}">${esc(q.prompt)}</div>${diagram}${options}<div id="answerArea" class="hidden">${answerHtml(q)}</div></div>
-  </div>
-  <div class="quiz-dock"><div class="dock-tools"><button id="masterBtn" class="btn ${q.mastered?'ok':'ghost'} small" onclick="toggleMasteredNow()">${q.mastered?'✓ Mastered':'☆ Master'}</button><button id="markBtn" class="btn ${q.marked?'warn':'ghost'} small" onclick="toggleMarkedNow()">${q.marked?'★ Marked':'☆ Mark'}</button><button class="btn ghost small" onclick="openNote()">📝 Note</button><button class="btn ghost small" onclick="pauseQuiz()">⏸ Pause</button></div><div class="dock-nav"><button class="btn ghost ${i===0?'hidden':''}" onclick="previousQuestion()">← Previous</button><button id="nextBtn" class="btn primary hidden" onclick="nextQuestion()">${i===total-1?'Finish':'Next →'}</button></div></div>`;
-
-  requestAnimationFrame(adjustQuestionFont);
-  if(q._revealed){if(isMcq)paintAnsweredOptions(q);showAnswerArea()}
+ const s=app.session,q=s.questions[s.index];if(!q){finishQuiz();return}app.revealed=false;app.selected=null;app.startedAt=Date.now();
+ const mcq=String(q.answerMode||'').toLowerCase()==='mcq'&&Array.isArray(q.options)&&q.options.length;
+ $('#main').innerHTML=`<div class="quiz"><div class="quiz-head"><div><div class="eyebrow">${esc(s.title||'Practice')}</div><div class="quiz-title">${s.index+1} / ${s.questions.length}</div></div><button class="iconbtn" onclick="exitQuiz()">×</button></div><div class="qcard"><div class="qtext ${questionSizeClass(q.question)}">${esc(q.question)}</div>${renderDiagram(q)}<div id="answerArea">${mcq?`<div class="options">${q.options.map((o,i)=>`<button class="option" data-index="${i}" onclick="answerMCQ(Number(this.dataset.index))">${esc(o)}</button>`).join('')}</div>`:`<button class="btn primary" style="width:100%;margin-top:16px" onclick="showAnswer()">Show Answer</button>`}</div><div id="explanation"></div></div></div><div class="quiz-dock"><button class="btn ghost" onclick="prevQuestion()">← Previous</button><button class="btn ghost" id="markBtn" onclick="toggleMark()">${q.marked?'★ Marked':'☆ Mark'}</button><button class="btn soft hidden" id="nextBtn" onclick="nextQuestion()">Next →</button></div>`;
 }
-
-function answerHtml(q){
-  const result=q.answerMode==='MCQ'&&q._answered?`<div class="feedback-result ${q._selected===q.correctOption?'ok':'bad'}">${q._selected===q.correctOption?'✓ Correct':'✕ Correct option: '+esc(q.correctOption)}</div>`:'';
-  return `<div class="answer-block"><div class="answer-head">Answer</div><div class="answer-body">${result}<div class="formula-answer">${esc(q.answer)}</div>${q.explanation?`<h4>How it works</h4><div class="explanation">${esc(q.explanation)}</div>`:''}${q.memoryCue?`<h4>Memory cue</h4><div class="memory">${esc(q.memoryCue)}</div>`:''}${q.note?`<h4>My note</h4><div class="memory">${esc(q.note)}</div>`:''}</div></div>`;
+function answerMCQ(i){if(app.revealed)return;const q=app.session.questions[app.session.index],buttons=[...document.querySelectorAll('.option')],correct=Number(q.correctOption);app.selected=i;app.revealed=true;buttons.forEach((b,idx)=>{if(idx===correct)b.classList.add('correct');else if(idx===i)b.classList.add('wrong');b.disabled=true});revealExplanation(i===correct?'correct':'wrong')}
+function showAnswer(){if(app.revealed)return;app.revealed=true;revealExplanation('seen')}
+function revealExplanation(result){const q=app.session.questions[app.session.index];$('#explanation').innerHTML=`<div class="explain"><h4>${result==='correct'?'✓ Correct':result==='wrong'?'✕ Review':'Answer'}</h4>${q.answer?`<div><b>${esc(q.answer)}</b></div>`:''}${q.explanation?`<div style="margin-top:7px">${esc(q.explanation)}</div>`:''}${q.memoryCue?`<div class="memory"><b>Memory cue</b><div>${esc(q.memoryCue)}</div></div>`:''}<div class="row" style="margin-top:12px"><button class="btn ghost" onclick="setCurrentMastered(true)">Mastered</button><button class="btn ghost" onclick="openNote()">Note</button></div></div>`;$('#nextBtn').classList.remove('hidden');submitAttempt(result)}
+function submitAttempt(result){const q=app.session.questions[app.session.index],sec=(Date.now()-app.startedAt)/1000;google.script.run.submitRecall({questionId:q.questionId,result,responseSec:sec,variantType:q.variantType||'',correctOption:q.correctOption,mode:app.session.mode,sessionId:app.session.sessionId,nextIndex:app.session.index+1,mastered:!!q.mastered})}
+function nextQuestion(){if(app.session.index>=app.session.questions.length-1){finishQuiz();return}app.session.index++;renderQuestion();window.scrollTo(0,0)}
+function prevQuestion(){if(app.session.index<=0)return;app.session.index--;renderQuestion();window.scrollTo(0,0)}
+function setCurrentMastered(v){const q=app.session.questions[app.session.index];google.script.run.withSuccessHandler(r=>{q.mastered=r.mastered;toast(r.mastered?'Marked mastered':'Mastered removed')}).setMastered(q.questionId,v)}
+function toggleMark(){const q=app.session.questions[app.session.index];google.script.run.withSuccessHandler(r=>{q.marked=r.marked;$('#markBtn').textContent=r.marked?'★ Marked':'☆ Mark'}).toggleMarked(q.questionId)}
+function openNote(){const q=app.session.questions[app.session.index],m=$('#modal');m.className='modal';m.innerHTML=`<div class="sheet"><div class="row between"><div class="quiz-title">Question note</div><button class="iconbtn" onclick="closeModal()">×</button></div><textarea id="noteText" style="width:100%;height:120px;margin-top:12px;border:1px solid var(--line);border-radius:12px;padding:12px;font:inherit">${esc(q.note||'')}</textarea><button class="btn primary" style="width:100%;margin-top:10px" onclick="saveCurrentNote()">Save note</button></div>`}
+function closeModal(){$('#modal').className='hidden';$('#modal').innerHTML=''}
+function saveCurrentNote(){const q=app.session.questions[app.session.index],t=$('#noteText').value;google.script.run.withSuccessHandler(()=>{q.note=t;closeModal();toast('Note saved')}).saveNote(q.questionId,t)}
+function finishQuiz(){const sid=app.session&&app.session.sessionId;google.script.run.withSuccessHandler(d=>{app.bootstrap.dashboard=d;app.session=null;showView('home')}).finishSession(sid)}
+function exitQuiz(){app.session=null;showView('home')}
+function renderDiagram(q){
+  let raw=q.diagramJson,obj=null;if(!q.diagramType||raw==null||raw===''||raw==='{}')return'';try{obj=typeof raw==='string'?JSON.parse(raw):raw}catch(e){return''}if(!obj||typeof obj!=='object'||obj.show===false||!Object.keys(obj).length)return'';
+  const type=String(q.diagramType||'').toLowerCase(),svg=diagramSvg(type,obj);return svg?`<div class="diagram">${svg}</div>`:'';
 }
-
-function revealAnswer(){const q=app.quiz.questions[app.quiz.index];if(q.answerMode==='MCQ')return;q._revealed=true;showAnswerArea()}
-function showAnswerArea(){const area=$('#answerArea');if(area)area.classList.remove('hidden');const b=$('#showBtn');if(b)b.classList.add('hidden');const n=$('#nextBtn');if(n)n.classList.remove('hidden')}
-
-function chooseOption(k){
-  const q=app.quiz.questions[app.quiz.index];
-  if(q.answerMode!=='MCQ'||q._answered)return;
-  q._answered=true;q._selected=k;q._revealed=true;
-  paintAnsweredOptions(q);showAnswerArea();saveAttempt(q,k===q.correctOption?'correct':'wrong');
+function diagramSvg(type,d){
+ const wrap=inner=>`<svg viewBox="0 0 360 230" role="img" aria-label="Mathematical diagram" xmlns="http://www.w3.org/2000/svg"><g stroke="currentColor" fill="none" stroke-width="2">${inner}</g></svg>`,txt=(x,y,t)=>`<text x="${x}" y="${y}" fill="currentColor" stroke="none" font-size="13" font-family="system-ui">${esc(t||'')}</text>`;
+ if(/circle|chord|arc|tangent|secant|sector|semicircle|cyclic/.test(type)){let z=`<circle cx="180" cy="115" r="75"/>`;if(/chord|cyclic/.test(type))z+=`<line x1="120" y1="75" x2="240" y2="75"/>`;if(/tangent/.test(type))z+=`<line x1="80" y1="190" x2="280" y2="190"/><line x1="180" y1="115" x2="180" y2="190"/>`;if(/secant/.test(type))z+=`<line x1="70" y1="155" x2="290" y2="70"/>`;if(/sector/.test(type))z+=`<line x1="180" y1="115" x2="245" y2="78"/><line x1="180" y1="115" x2="225" y2="175"/>`;return wrap(z)}
+ if(/triangle|median|centroid|incenter|circumcenter|orthocenter|altitude|bisector|similar|congruen|trigon|height/.test(type)){let z=`<polygon points="70,190 290,190 190,35"/>`;if(/altitude|height|orthocenter/.test(type))z+=`<line x1="190" y1="35" x2="190" y2="190"/><path d="M190 176h14v14"/>`;if(/median|centroid/.test(type))z+=`<line x1="190" y1="35" x2="180" y2="190"/><circle cx="184" cy="138" r="4" fill="currentColor"/>`;return wrap(z)}
+ if(/square|rectangle|parallelogram|rhombus|trapez|quadrilateral|polygon/.test(type)){let pts=/trapez/.test(type)?'90,55 260,55 305,185 55,185':/parallelogram/.test(type)?'105,55 280,55 245,185 70,185':/rhombus/.test(type)?'180,35 300,115 180,195 60,115':'75,50 285,50 285,190 75,190';let z=`<polygon points="${pts}"/>`;if(/rhombus/.test(type))z+=`<line x1="180" y1="35" x2="180" y2="195"/><line x1="60" y1="115" x2="300" y2="115"/>`;return wrap(z)}
+ if(/coordinate/.test(type)){let z=`<line x1="35" y1="115" x2="325" y2="115"/><line x1="180" y1="20" x2="180" y2="210"/><circle cx="245" cy="70" r="4" fill="currentColor"/>${txt(250,66,d.point||'P')}`;return wrap(z)}
+ if(/cube|cuboid|prism|pyramid|cylinder|cone|frustum|sphere|hemisphere|solid|3d/.test(type)){if(/sphere/.test(type))return wrap(`<circle cx="180" cy="115" r="75"/><ellipse cx="180" cy="115" rx="75" ry="24" stroke-dasharray="5 5"/>`);if(/cylinder/.test(type))return wrap(`<ellipse cx="180" cy="55" rx="65" ry="22"/><line x1="115" y1="55" x2="115" y2="175"/><line x1="245" y1="55" x2="245" y2="175"/><ellipse cx="180" cy="175" rx="65" ry="22"/>`);if(/cone/.test(type))return wrap(`<ellipse cx="180" cy="180" rx="70" ry="20"/><line x1="110" y1="180" x2="180" y2="35"/><line x1="250" y1="180" x2="180" y2="35"/>`);return wrap(`<rect x="90" y="65" width="150" height="115"/><polyline points="90,65 130,35 280,35 240,65"/><polyline points="240,65 280,35 280,150 240,180"/>`)}
+ if(/line|angle|parallel|transversal/.test(type))return wrap(`<line x1="55" y1="70" x2="305" y2="70"/><line x1="55" y1="165" x2="305" y2="165"/><line x1="130" y1="25" x2="230" y2="210"/>`);
+ return'';
 }
-
-function paintAnsweredOptions(q){['A','B','C','D'].forEach(k=>{const b=$('#opt'+k);if(!b)return;b.disabled=true;b.classList.remove('correct','wrong');if(k===q.correctOption)b.classList.add('correct');else if(k===q._selected)b.classList.add('wrong')})}
-
-function saveAttempt(q,result){
-  if(q._attemptSaved)return;
-  q._attemptSaved=true;
-  server('submitRecall',{questionId:q.questionId,result,mastered:!!q.mastered,mode:app.quiz.mode,sessionId:app.quiz.sessionId,nextIndex:app.quiz.index+1,responseSec:(Date.now()-app.qStart)/1000,variantType:q.variantType||'',correctOption:q.correctOption||''}).catch(()=>{q._attemptSaved=false;toast('Saving delayed. You can continue.')});
-}
-
-function previousQuestion(){if(app.quiz.index<=0)return;app.quiz.index--;app.qStart=Date.now();renderQuestion();window.scrollTo(0,0)}
-function nextQuestion(){const q=app.quiz.questions[app.quiz.index];if(!q._revealed)return;if(q.answerMode!=='MCQ')saveAttempt(q,'seen');if(app.quiz.index>=app.quiz.questions.length-1){completeQuiz();return}app.quiz.index++;app.qStart=Date.now();renderQuestion();window.scrollTo(0,0)}
-
-function toggleMasteredNow(){
-  const q=app.quiz.questions[app.quiz.index];q.mastered=!q.mastered;
-  const b=$('#masterBtn');b.className='btn '+(q.mastered?'ok':'ghost')+' small';b.textContent=q.mastered?'✓ Mastered':'☆ Master';
-  server('setMastered',q.questionId,q.mastered).catch(()=>toast('Mastered status will retry later.'));
-}
-
-function toggleMarkedNow(){
-  const q=app.quiz.questions[app.quiz.index];q.marked=!q.marked;
-  const b=$('#markBtn');b.className='btn '+(q.marked?'warn':'ghost')+' small';b.textContent=q.marked?'★ Marked':'☆ Mark';
-  server('toggleMarked',q.questionId).then(r=>{if(r&&typeof r.marked==='boolean')q.marked=r.marked}).catch(()=>toast('Mark saving delayed.'));
-}
-
-function openNote(){const q=app.quiz.questions[app.quiz.index];openModal(`<h3>My note</h3><textarea id="noteText" class="notearea">${esc(q.note||'')}</textarea><div style="height:8px"></div><button class="btn primary" style="width:100%" onclick="saveNoteNow()">Save Note</button>`)}
-async function saveNoteNow(){const q=app.quiz.questions[app.quiz.index],text=$('#noteText').value;try{await server('saveNote',q.questionId,text);q.note=text;closeModal();renderQuestion();if(q._revealed)showAnswerArea();toast('Note saved')}catch(e){toast(e.message)}}
-
-function pauseQuiz(){openModal(`<div style="text-align:center"><h2>Session paused</h2><p class="muted">${esc(app.quiz.title)} · ${app.quiz.index+1}/${app.quiz.questions.length}</p><button class="btn primary" style="width:100%" onclick="closeModal()">Resume</button><div style="height:8px"></div><button class="btn ghost" style="width:100%" onclick="saveAndHome()">Save & Home</button></div>`)}
-function saveAndHome(){closeModal();app.bootstrap.resume={sessionId:app.quiz.sessionId,title:app.quiz.title,currentIndex:app.quiz.index,total:app.quiz.questions.length,mode:app.quiz.mode};showView('home')}
-
-function completeQuiz(){
-  const id=app.quiz.sessionId,chapter=app.quiz.planChapter||app.bootstrap.dashboard.todayChapter,mode=app.quiz.mode;
-  $('#nav').classList.remove('hidden');
-  $('#main').innerHTML=`<div class="content"><div class="card" style="text-align:center"><div style="font-size:36px">✓</div><h2>Session complete</h2>${mode==='daily'?`<button class="btn primary" style="width:100%" data-chapter="${esc(chapter)}" onclick="beginQuiz('practice_more',{chapter:this.dataset.chapter})">+ Practice More ${esc(chapter)}</button><div style="height:8px"></div>`:''}<button class="btn ghost" style="width:100%" onclick="showView('home')">Back Home</button></div></div>`;
-  server('finishSession',id).then(()=>server('getAppBootstrap')).then(b=>app.bootstrap=b).catch(()=>{});
-}
-
-function openModal(inner){const m=$('#modal');m.innerHTML=`<div class="modal" onclick="if(event.target===this)closeModal()"><div class="sheet">${inner}</div></div>`;m.classList.remove('hidden')}
-function closeModal(){$('#modal').classList.add('hidden');$('#modal').innerHTML=''}
-
-init();
+function boot(){google.script.run.withSuccessHandler(b=>{app.bootstrap=b;$('#subtitle').textContent=`Day ${b.dashboard.day} · ${b.dashboard.todayChapter}`;home();nav('home')}).withFailureHandler(e=>{$('#main').innerHTML=`<div class="content"><div class="card">${esc(e.message||e)}</div></div>`}).getAppBootstrap()}
+boot();
 </script>
 </body>
 </html>
