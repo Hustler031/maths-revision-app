@@ -29,15 +29,15 @@ jobs:
       - name: Validate server JavaScript syntax
         shell: bash
         run: |
-          cat Code.gs Hubs.gs Questions.gs Practice.gs Data.gs > /tmp/maths-server.js
+          cat *.gs > /tmp/maths-server.js
           node --check /tmp/maths-server.js
 
       - name: Validate required backend contracts
         shell: bash
         run: |
           set -e
-          SERVER="$(cat Code.gs Hubs.gs Questions.gs Practice.gs Data.gs)"
-          for token in chapter_random chapter_weak chapter_complete topic_random topic_weak topic_complete majorTopicForQuestion_ selectCalculationTraining_ getDemandSets_ getScheduledPlan_ auditMathsRuntime_ questionId; do
+          SERVER="$(cat *.gs)"
+          for token in chapter_random chapter_weak chapter_complete topic_random topic_weak topic_complete group_random group_weak group_complete selectGroupPractice_ majorTopicForQuestion_ selectCalculationTraining_ getDemandSets_ getScheduledPlan_ auditMathsRuntime_ questionId; do
             [[ "$SERVER" == *"$token"* ]] || { echo "Missing backend contract: $token"; exit 1; }
           done
 
@@ -45,13 +45,18 @@ jobs:
         shell: bash
         run: |
           set -e
-          for token in openChapterHub openTopicHub chapter_random chapter_weak chapter_complete topic_random topic_weak topic_complete renderDiagram questionSizeClass questionId; do
-            grep -q "$token" Index.html || { echo "Missing frontend contract: $token"; exit 1; }
+          FRONTEND="$(cat Index.html DemandUI.gs ChapterGroupsUI.gs)"
+          for token in openChapterHub openTopicHub chapter_random chapter_weak chapter_complete topic_random topic_weak topic_complete openStudyGroup openMocksGroup group_random group_weak group_complete openDemandSetHub renderDiagram questionSizeClass questionId; do
+            [[ "$FRONTEND" == *"$token"* ]] || { echo "Missing frontend contract: $token"; exit 1; }
           done
           grep -q 'viewport-fit=cover' Index.html || { echo 'Known-good viewport contract missing.'; exit 1; }
           grep -q 'width:min(820px,100%)' Index.html || { echo 'Known-good fixed mobile shell missing.'; exit 1; }
           if grep -q 'document.body.scrollHeight' Index.html; then
             echo 'Answer auto-scroll regression detected.'
+            exit 1
+          fi
+          if grep -q 'MutationObserver' DemandUI.gs ChapterGroupsUI.gs; then
+            echo 'Global DOM observer regression detected.'
             exit 1
           fi
 
