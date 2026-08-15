@@ -46,11 +46,13 @@ jobs:
         run: |
           set -e
           FRONTEND="$(cat Index.html DemandUI.gs ChapterGroupsUI.gs)"
-          for token in openChapterHub openTopicHub chapter_random chapter_weak chapter_complete topic_random topic_weak topic_complete openStudyGroup openMocksGroup group_random group_weak group_complete openDemandSetHub renderDiagram questionSizeClass questionId; do
+          for token in openChapterHub openTopicHub chapter_random chapter_weak chapter_complete topic_random topic_weak topic_complete openStudyGroup openMocksGroup group_random group_weak group_complete openDemandSetHub renderDiagram questionSizeClass questionId toggleTheme "body.dark" "function server" "async function beginQuiz" "function openQuiz" "app.quiz"; do
             [[ "$FRONTEND" == *"$token"* ]] || { echo "Missing frontend contract: $token"; exit 1; }
           done
           grep -q 'viewport-fit=cover' Index.html || { echo 'Known-good viewport contract missing.'; exit 1; }
           grep -q 'width:min(820px,100%)' Index.html || { echo 'Known-good fixed mobile shell missing.'; exit 1; }
+          INDEX_BYTES=$(wc -c < Index.html)
+          test "$INDEX_BYTES" -ge 45000 || { echo "Index.html unexpectedly small ($INDEX_BYTES bytes); possible accidental truncation/replacement."; exit 1; }
           if grep -q 'document.body.scrollHeight' Index.html; then
             echo 'Answer auto-scroll regression detected.'
             exit 1
