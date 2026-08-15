@@ -1,0 +1,82 @@
+name: Deploy Maths Revision to Apps Script
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '**/*.gs'
+      - '**/*.html'
+      - 'appsscript.json'
+      - '.claspignore'
+
+permissions:
+  contents: read
+
+jobs:
+  validate-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Validate server JavaScript syntax
+        shell: bash
+        run: |
+          cat Code.gs Hubs.gs Questions.gs Practice.gs Data.gs > /tmp/maths-server.js
+          node --check /tmp/maths-server.js
+
+      - name: Validate required backend contracts
+        shell: bash
+        run: |
+          set -e
+          SERVER="$(cat Code.gs Hubs.gs Questions.gs Practice.gs Data.gs)"
+          for token in chapter_random chapter_weak chapter_complete topic_random topic_weak topic_complete majorTopicForQuestion_ selectCalculationTraining_ getDemandSets_ getScheduledPlan_ auditMathsRuntime_ questionId; do
+            printf '%s' "$SERVER" | grep -q "$token" || { echo "Missing backend contract: $token"; exit 1; }
+          done
+
+      - name: Validate frontend contracts
+        shell: bash
+        run: |
+          set -e
+          for token in openChapterHub openTopicHub chapter_random chapter_weak chapter_complete topic_random topic_weak topic_complete renderDiagram questionSizeClass questionId; do
+            grep -q "$token" Index.html || { echo "Missing frontend contract: $token"; exit 1; }
+          done
+          if grep -q 'document.body.scrollHeight' Index.html; then
+            echo 'Answer auto-scroll regression detected.'
+            exit 1
+          fi
+
+      - name: Validate deployment secrets
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+          CLASP_JSON: ${{ secrets.CLASP_JSON }}
+          DEPLOYMENT_ID: ${{ secrets.DEPLOYMENT_ID }}
+        run: |
+          test -n "$CLASPRC_JSON" || { echo 'Missing CLASPRC_JSON secret'; exit 1; }
+          test -n "$CLASP_JSON" || { echo 'Missing CLASP_JSON secret'; exit 1; }
+          test -n "$DEPLOYMENT_ID" || { echo 'Missing DEPLOYMENT_ID secret'; exit 1; }
+
+      - name: Configure clasp authentication
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+          CLASP_JSON: ${{ secrets.CLASP_JSON }}
+        run: |
+          printf '%s' "$CLASPRC_JSON" > "$HOME/.clasprc.json"
+          printf '%s' "$CLASP_JSON" > .clasp.json
+
+      - name: Push source to Apps Script
+        run: npx --yes @google/clasp@3.3.0 push --force
+
+      - name: Update existing web-app deployment
+        env:
+          DEPLOYMENT_ID: ${{ secrets.DEPLOYMENT_ID }}
+        run: |
+          npx --yes @google/clasp@3.3.0 create-deployment \
+            --deploymentId "$DEPLOYMENT_ID" \
+            --description "GitHub $(git rev-parse --short HEAD)"
