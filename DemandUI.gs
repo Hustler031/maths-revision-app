@@ -31,12 +31,13 @@ function demandUiPatch_(){return `<script>
   }
   window.openDemandSetHub=function(setId){
     var set=demandSetById(setId);if(!set){toast('Demand set not found.');return;}
-    app.view='demand_hub';nav('ondemand');$('#nav').classList.remove('hidden');
+    var isCalc=String(setId)==='CALC_TRAINING';
+    app.view=isCalc?'ondemand':'chapters';nav(isCalc?'ondemand':'chapters');$('#nav').classList.remove('hidden');
     var cats=[];
     if(Number(set.calculativeCount||0)>0)cats.push('<div class="list-card topic-row" data-demand-cat="calculative" data-demand-value="Calculative"><div class="row between"><div><b>⚡ Calculative</b><div class="muted">'+Number(set.calculativeCount||0)+' questions · also remain in their chapters</div></div><span class="tag">Open</span></div></div>');
     (set.chapters||[]).forEach(function(c){cats.push('<div class="list-card topic-row" data-demand-cat="chapter" data-demand-value="'+esc(c.name)+'"><div class="row between"><div><b>'+esc(c.name)+'</b><div class="muted">'+Number(c.count||0)+' questions</div></div><span class="tag">Open</span></div></div>');});
-    $('#main').innerHTML='<div class="content"><button class="btn ghost" id="demandBack">← On Demand</button><div class="section-title">'+esc(set.name).toUpperCase()+'</div><div class="card"><div class="hub-stats"><div class="hub-stat"><b>'+Number(set.count||0)+'</b><span class="muted">Total</span></div><div class="hub-stat"><b>'+Number(set.calculativeCount||0)+'</b><span class="muted">Calculative</span></div><div class="hub-stat"><b>'+Number((set.chapters||[]).length)+'</b><span class="muted">Chapters</span></div></div><div class="practice-actions"><button class="btn ghost" data-demand-mode="all">📚 Practice All</button><button class="btn soft" data-demand-mode="random">🔀 Random</button><button class="btn ghost" data-demand-mode="weak">🎯 Weak</button></div></div><div class="section-title">Categories</div><div class="list">'+(cats.join('')||'<div class="card muted">No categories yet.</div>')+'</div></div>';
-    $('#demandBack').onclick=function(){showView('ondemand');};
+    $('#main').innerHTML='<div class="content"><button class="btn ghost" id="demandBack">← '+(isCalc?'On Demand':'Mocks')+'</button><div class="section-title">'+esc(set.name).toUpperCase()+'</div><div class="card"><div class="hub-stats"><div class="hub-stat"><b>'+Number(set.count||0)+'</b><span class="muted">Total</span></div><div class="hub-stat"><b>'+Number(set.calculativeCount||0)+'</b><span class="muted">Calculative</span></div><div class="hub-stat"><b>'+Number((set.chapters||[]).length)+'</b><span class="muted">Chapters</span></div></div><div class="practice-actions"><button class="btn ghost" data-demand-mode="all">📚 Practice All</button><button class="btn soft" data-demand-mode="random">🔀 Random</button><button class="btn ghost" data-demand-mode="weak">🎯 Weak</button></div></div><div class="section-title">Categories</div><div class="list">'+(cats.join('')||'<div class="card muted">No categories yet.</div>')+'</div></div>';
+    $('#demandBack').onclick=function(){if(isCalc)showView('ondemand');else if(typeof openMocksGroup==='function')openMocksGroup();else chapters();};
     bindPracticeButtons($('#main'),setId,'','');
     $('#main').querySelectorAll('[data-demand-cat]').forEach(function(card){card.onclick=function(){openDemandCategory(setId,card.dataset.demandCat,card.dataset.demandValue);};});
     window.scrollTo(0,0);
@@ -44,24 +45,34 @@ function demandUiPatch_(){return `<script>
   window.openDemandCategory=function(setId,type,value){
     var set=demandSetById(setId);if(!set)return;
     var count=demandScopeCount(set,type,value);
+    app.view='chapters';nav('chapters');
     $('#main').innerHTML='<div class="content"><button class="btn ghost" id="demandCategoryBack">← '+esc(set.name)+'</button><div class="section-title">'+esc(set.name).toUpperCase()+' → '+esc(value).toUpperCase()+'</div><div class="card"><div class="hub-stats"><div class="hub-stat"><b>'+count+'</b><span class="muted">Questions</span></div></div><div class="practice-actions"><button class="btn ghost" data-demand-mode="all">📚 Practice All</button><button class="btn soft" data-demand-mode="random">🔀 Random</button><button class="btn ghost" data-demand-mode="weak">🎯 Weak</button></div></div></div>';
     $('#demandCategoryBack').onclick=function(){openDemandSetHub(setId);};
     bindPracticeButtons($('#main'),setId,type,value);
     window.scrollTo(0,0);
   };
   window.startDemandSet=function(setId){openDemandSetHub(String(setId));};
-  function patchDemandButtonsOnce(){
-    document.querySelectorAll('#main [data-set-id]').forEach(function(btn){
+  function tidyOnDemandOnce(){
+    var root=$('#main');if(!root)return;
+    root.querySelectorAll('[data-set-id]').forEach(function(btn){
       var id=String(btn.dataset.setId||'');
       if(id&&id!=='CALC_TRAINING'){
-        if(btn.textContent!=='Open')btn.textContent='Open';
-        btn.onclick=function(e){e.preventDefault();e.stopPropagation();openDemandSetHub(id);};
+        var card=btn.closest('.list-card');if(card)card.remove();
+      }
+    });
+    var cards=root.querySelectorAll('.card');
+    cards.forEach(function(card){
+      var eyebrow=card.querySelector('.eyebrow');
+      if(eyebrow&&eyebrow.textContent.trim()==='My Demand Sets'){
+        eyebrow.textContent='Calculation Training';
+        var muted=card.querySelector('.muted');if(muted)muted.textContent='Saved mocks are available under Chapters → Mocks.';
+        var list=card.querySelector('.list');if(list&&!list.children.length)card.remove();
       }
     });
   }
   var originalOndemand=window.ondemand;
   if(typeof originalOndemand==='function'){
-    window.ondemand=function(){originalOndemand();patchDemandButtonsOnce();};
+    window.ondemand=function(){originalOndemand();tidyOnDemandOnce();};
   }
 })();
 </script>`;}
