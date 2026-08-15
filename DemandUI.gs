@@ -50,16 +50,18 @@ function demandUiPatch_(){return `<script>
     window.scrollTo(0,0);
   };
   window.startDemandSet=function(setId){openDemandSetHub(String(setId));};
-  function patchDemandButtons(){
+  function patchDemandButtonsOnce(){
     document.querySelectorAll('#main [data-set-id]').forEach(function(btn){
       var id=String(btn.dataset.setId||'');
       if(id&&id!=='CALC_TRAINING'){
-        btn.textContent='Open';
+        if(btn.textContent!=='Open')btn.textContent='Open';
         btn.onclick=function(e){e.preventDefault();e.stopPropagation();openDemandSetHub(id);};
       }
     });
   }
-  var main=document.getElementById('main');
-  if(main){new MutationObserver(patchDemandButtons).observe(main,{childList:true,subtree:true});patchDemandButtons();}
+  var originalOndemand=window.ondemand;
+  if(typeof originalOndemand==='function'){
+    window.ondemand=function(){originalOndemand();patchDemandButtonsOnce();};
+  }
 })();
 </script>`;}
