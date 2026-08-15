@@ -114,9 +114,10 @@ function majorTopicKey_(name){ return String(name||'').trim().toLowerCase().repl
 function majorTopicForQuestion_(q) {
   const chapter=normalizeLabel_(q.chapter), raw=normalizeLabel_((q.topic||'')+' '+(q.subtopic||''));
   if(chapter==='geometry'){
-    if(/circle|chord|arc|tangent|secant|cyclic|semicircle/.test(raw))return 'Circle';
-    if(/quadrilateral|polygon|parallelogram|rectangle|rhombus|square|trapez|kite/.test(raw))return 'Quadrilateral & Polygon';
-    if(/triangle|centroid|incenter|circumcenter|orthocenter|median|altitude|pythag|similar|congruen|equilateral|isosceles|angle bisector|midpoint theorem|apollonius/.test(raw))return 'Triangle';
+    const topic=normalizeLabel_(q.topic||'');
+    if(topic==='circle'||/chord|arc|tangent|secant|cyclic|semicircle|central angle|inscribed angle|common tangent/.test(raw))return 'Circle';
+    if(/quadrilateral|polygon|parallelogram|rectangle|rhombus|square|trapez|kite/.test(topic)||/quadrilateral|polygon|parallelogram|rectangle|rhombus|square|trapez|kite/.test(raw))return 'Quadrilateral & Polygon';
+    if(/triangle/.test(topic)||/centroid|incenter|circumcenter|orthocenter|median|altitude|pythag|similar|congruen|equilateral|isosceles|midpoint theorem|apollonius/.test(raw))return 'Triangle';
     return 'Lines & Angles';
   }
   if(chapter==='mensuration 2d'){
