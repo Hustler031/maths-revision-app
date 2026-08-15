@@ -111,6 +111,15 @@ function studyTimezone_(){ return String(getSetting_('study_timezone',MATHS.DEFA
 
 function majorTopicKey_(name){ return String(name||'').trim().toLowerCase().replace(/&/g,' and ').replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,''); }
 
+function shouldPromoteSubtopic_(q){
+  const topic=String(q.topic||'').trim(), subtopic=String(q.subtopic||'').trim();
+  if(!subtopic||same_(subtopic,topic))return false;
+  const ignored=['general','basics','basic','overview','mixed','miscellaneous'];
+  if(ignored.indexOf(normalizeLabel_(subtopic))>=0)return false;
+  const type=normalizeLabel_(q.card_type||'');
+  return ['application','question','practice','problem'].indexOf(type)>=0;
+}
+
 function majorTopicForQuestion_(q) {
   const chapter=normalizeLabel_(q.chapter), raw=normalizeLabel_((q.topic||'')+' '+(q.subtopic||''));
   if(chapter==='geometry'){
@@ -140,8 +149,10 @@ function majorTopicForQuestion_(q) {
   if(chapter==='profit & loss and discount'){
     if(/dishonest seller|false weight|false measure|short weight|cheat/.test(raw))return 'Dishonest Sellers';
     if(normalizeLabel_(q.topic)==='discount'||/discount|marked price|markup/.test(raw))return 'Discount';
+    if(shouldPromoteSubtopic_(q))return String(q.subtopic).trim();
     return 'Profit & Loss';
   }
+  if(shouldPromoteSubtopic_(q))return String(q.subtopic).trim();
   return String(q.topic||'General').trim()||'General';
 }
 
@@ -249,6 +260,7 @@ function auditMathsRuntime_(){
   const m2Info=getChapters_().find(c=>same_(c.chapter,'Mensuration 2D')); const tri=m2Info&&(m2Info.majorTopics||[]).find(t=>t.name==='Triangle');
   const pldInfo=getChapters_().find(c=>same_(c.chapter,'Profit & Loss and Discount')); const dishonest=pldInfo&&(pldInfo.majorTopics||[]).find(t=>t.name==='Dishonest Sellers');
   const topic=(chapterName,t,mode)=>selectPracticePool_(all,state,{chapter:chapterName,majorTopicKey:t?t.key:'',count:20},mode);
+  const promotedApplicationSubtopics=all.filter(q=>active_(q)&&shouldPromoteSubtopic_(q)&&!['geometry','mensuration 2d','mensuration 3d'].includes(normalizeLabel_(q.chapter))).reduce((acc,q)=>{const name=majorTopicForQuestion_(q),key=normalizeLabel_(q.chapter)+'|'+majorTopicKey_(name);if(!acc[key])acc[key]={chapter:q.chapter,name:name,count:0};acc[key].count++;return acc;},{});
   return {
     geometry:{total:geometryInfo?geometryInfo.total:0,mastered:geometryInfo?geometryInfo.mastered:0,nonMastered:geometryInfo?geometryInfo.remaining:0,majorTopics:geometryInfo?geometryInfo.majorTopics:[],complete:chapter('Geometry','chapter_complete').pool.length,random:chapter('Geometry','chapter_random').pool.length,weak:chapter('Geometry','chapter_weak').pool.length},
     geometryCircle:circle?{mappedTotal:circle.total,mastered:circle.mastered,complete:topic('Geometry',circle,'topic_complete').pool.length,random:topic('Geometry',circle,'topic_random').pool.length,weak:topic('Geometry',circle,'topic_weak').pool.length}:null,
@@ -256,6 +268,7 @@ function auditMathsRuntime_(){
     mensurationTriangle:tri?{mappedTotal:tri.total,complete:topic('Mensuration 2D',tri,'topic_complete').pool.length,random:topic('Mensuration 2D',tri,'topic_random').pool.length,weak:topic('Mensuration 2D',tri,'topic_weak').pool.length}:null,
     profitLossDiscount:{total:pldInfo?pldInfo.total:0,majorTopics:pldInfo?pldInfo.majorTopics:[]},
     dishonestSellers:dishonest?{mappedTotal:dishonest.total,complete:topic('Profit & Loss and Discount',dishonest,'topic_complete').pool.length,random:topic('Profit & Loss and Discount',dishonest,'topic_random').pool.length,weak:topic('Profit & Loss and Discount',dishonest,'topic_weak').pool.length}:null,
+    promotedApplicationSubtopics:Object.values(promotedApplicationSubtopics),
     schedule:getScheduledPlan_(),pending:getPendingPlanDays_(getScheduledPlan_().day,all,state),stateDuplicates:stateDuplicateAudit_()
   };
 }
