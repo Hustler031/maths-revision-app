@@ -9,6 +9,7 @@ on:
       - '**/*.html'
       - 'appsscript.json'
       - '.claspignore'
+      - '.github/workflows/deploy.yml'
 
 permissions:
   contents: read
@@ -23,7 +24,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
 
       - name: Validate server JavaScript syntax
         shell: bash
@@ -37,7 +38,7 @@ jobs:
           set -e
           SERVER="$(cat Code.gs Hubs.gs Questions.gs Practice.gs Data.gs)"
           for token in chapter_random chapter_weak chapter_complete topic_random topic_weak topic_complete majorTopicForQuestion_ selectCalculationTraining_ getDemandSets_ getScheduledPlan_ auditMathsRuntime_ questionId; do
-            printf '%s' "$SERVER" | grep -q "$token" || { echo "Missing backend contract: $token"; exit 1; }
+            [[ "$SERVER" == *"$token"* ]] || { echo "Missing backend contract: $token"; exit 1; }
           done
 
       - name: Validate frontend contracts
@@ -47,6 +48,8 @@ jobs:
           for token in openChapterHub openTopicHub chapter_random chapter_weak chapter_complete topic_random topic_weak topic_complete renderDiagram questionSizeClass questionId; do
             grep -q "$token" Index.html || { echo "Missing frontend contract: $token"; exit 1; }
           done
+          grep -q 'viewport-fit=cover' Index.html || { echo 'Known-good viewport contract missing.'; exit 1; }
+          grep -q 'width:min(820px,100%)' Index.html || { echo 'Known-good fixed mobile shell missing.'; exit 1; }
           if grep -q 'document.body.scrollHeight' Index.html; then
             echo 'Answer auto-scroll regression detected.'
             exit 1
