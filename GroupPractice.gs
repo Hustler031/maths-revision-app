@@ -16,7 +16,7 @@ function selectGroupPractice_(all, generated, state, request, mode) {
       return true;
     });
   } else {
-    pool=(all||[]).filter(q=>active_(q)&&chapters.includes(normalizeLabel_(q.chapter)));
+    pool=standardStudyQuestions_(all).filter(q=>chapters.includes(normalizeLabel_(q.chapter)));
   }
 
   if(!complete)pool=pool.filter(q=>!isMastered_(state[q.question_id]));
