@@ -1,31 +1,46 @@
+function demandQuestionIdSet_(){
+  const ids=new Set();
+  sheetObjects_(getSheet_(MATHS.SHEETS.DEMAND_SETS)).forEach(r=>{
+    if(!r.set_id||normalizeLabel_(r.status)==='inactive')return;
+    json_(r.question_ids_json,[]).forEach(id=>{const x=String(id||'').trim();if(x)ids.add(x);});
+  });
+  return ids;
+}
+
+function standardStudyQuestions_(all){
+  const demandIds=demandQuestionIdSet_();
+  return (all||getAllQuestions_()).filter(q=>active_(q)&&!demandIds.has(String(q.question_id||'')));
+}
+
 function getDashboard_() {
   const all = getAllQuestions_();
+  const activeAll = all.filter(active_);
+  const studyAll = standardStudyQuestions_(all);
   const state = getStateMap_();
   const scheduled = getScheduledPlan_();
   const today = scheduled.chapter;
-  const chapterCore = all.filter(q => active_(q) && chapterMatchesPlan_(q.chapter, today) && rotationTier_(q) === 'Core');
+  const chapterCore = scheduled.ready ? studyAll.filter(q => chapterMatchesPlan_(q.chapter, today) && rotationTier_(q) === 'Core') : [];
   const masteredToday = chapterCore.filter(q => isMastered_(state[q.question_id])).length;
   const freshRemaining = chapterCore.filter(q => !isMastered_(state[q.question_id]) && Number((state[q.question_id] || {}).attempts || 0) === 0).length;
   let mastered=0, marked=0, attempted=0;
-  all.forEach(q => { const s=state[q.question_id]; if(isMastered_(s)) mastered++; if(isMarked_(s)) marked++; if(s&&Number(s.attempts||0)>0) attempted++; });
-  const pending = getPendingPlanDays_(scheduled.day, all, state);
+  studyAll.forEach(q => { const s=state[q.question_id]; if(isMastered_(s)) mastered++; if(isMarked_(s)) marked++; if(s&&Number(s.attempts||0)>0) attempted++; });
+  const pending = scheduled.ready ? getPendingPlanDays_(scheduled.day, studyAll, state) : [];
   return {
-    day:scheduled.day, todayChapter:today, total:all.length,
+    day:scheduled.day, todayChapter:today, scheduleReady:!!scheduled.ready, total:studyAll.length,
     chapterTotal:chapterCore.length, chapterRemaining:chapterCore.length-masteredToday,
     chapterMastered:masteredToday, freshRemaining:freshRemaining,
-    mastered:mastered, marked:marked, attempted:attempted, generated:getGeneratedQuestions_().length,
-    fractions:all.filter(q => same_(q.chapter,'Fraction Patterns')).length,
-    triplets:all.filter(q => same_(q.chapter,'Triplets')).length,
-    pending:pending, studyTimezone:scheduled.timezone, planStartDate:scheduled.startDate
+    mastered:mastered, marked:marked, attempted:attempted, generated:getGeneratedQuestions_().filter(active_).length,
+    fractions:studyAll.filter(q => same_(q.chapter,'Fraction Patterns')).length,
+    triplets:studyAll.filter(q => same_(q.chapter,'Triplets')).length,
+    activeAll:activeAll.length, pending:pending, studyTimezone:scheduled.timezone, planStartDate:scheduled.startDate
   };
 }
 
 function getChapters_() {
-  const all = getAllQuestions_();
+  const all = standardStudyQuestions_(getAllQuestions_());
   const state = getStateMap_();
   const map = {};
   all.forEach(q => {
-    if (!active_(q)) return;
     const c = String(q.chapter || 'Other').trim() || 'Other';
     if (!map[c]) map[c] = {chapter:c,total:0,mastered:0,remaining:0,majorMap:{}};
     const m=map[c]; m.total++;
@@ -47,9 +62,10 @@ function getChapters_() {
 }
 
 function getLibraryCounts_() {
-  const all = getAllQuestions_();
+  const all = standardStudyQuestions_(getAllQuestions_());
   const state = getStateMap_();
-  const notes = sheetObjects_(getSheet_(MATHS.SHEETS.NOTES)).filter(n => String(n.note || '').trim());
+  const activeIds=new Set(all.map(q=>String(q.question_id)));
+  const notes = sheetObjects_(getSheet_(MATHS.SHEETS.NOTES)).filter(n => String(n.note || '').trim()&&activeIds.has(String(n.question_id||'')));
 
   return {
     formulas:all.filter(q => String(q.card_type).toLowerCase() === 'formula').length,
@@ -58,33 +74,33 @@ function getLibraryCounts_() {
     triplets:all.filter(q => q.chapter === 'Triplets').length,
     marked:all.filter(q => isMarked_(state[q.question_id])).length,
     notes:notes.length,
-    recent:Math.min(20, all.filter(active_).length)
+    recent:Math.min(20, all.length)
   };
 }
 
 function filterLibrary_(all, state, cluster) {
+  const pool=standardStudyQuestions_(all);
   const c = String(cluster || '').toLowerCase();
-  if (c === 'formula' || c === 'formulas') return all.filter(q => String(q.card_type).toLowerCase() === 'formula');
-  if (c === 'methods') return all.filter(q => ['method','pattern','trap'].includes(String(q.card_type).toLowerCase()));
-  if (c === 'fractions') return all.filter(q => q.chapter === 'Fraction Patterns');
-  if (c === 'triplets') return all.filter(q => q.chapter === 'Triplets');
-  if (c === 'marked') return all.filter(q => isMarked_(state[q.question_id]));
+  if (c === 'formula' || c === 'formulas') return pool.filter(q => String(q.card_type).toLowerCase() === 'formula');
+  if (c === 'methods') return pool.filter(q => ['method','pattern','trap'].includes(String(q.card_type).toLowerCase()));
+  if (c === 'fractions') return pool.filter(q => q.chapter === 'Fraction Patterns');
+  if (c === 'triplets') return pool.filter(q => q.chapter === 'Triplets');
+  if (c === 'marked') return pool.filter(q => isMarked_(state[q.question_id]));
 
   if (c === 'notes') {
     const ids = new Set(sheetObjects_(getSheet_(MATHS.SHEETS.NOTES))
       .filter(n => String(n.note || '').trim())
       .map(n => String(n.question_id)));
-    return all.filter(q => ids.has(q.question_id));
+    return pool.filter(q => ids.has(q.question_id));
   }
 
-  if (c === 'recent') return all.slice(-20);
-  return all;
+  if (c === 'recent') return pool.slice(-20);
+  return pool;
 }
 
 function filterOnDemand_(all, state, request) {
   request=request||{};
-  return all.filter(q => {
-    if (!active_(q)) return false;
+  return standardStudyQuestions_(all).filter(q => {
     if (request.chapter && !same_(q.chapter, request.chapter)) return false;
     if (request.topic && !same_(q.topic, request.topic)) return false;
     if (request.subtopic && !same_(q.subtopic, request.subtopic)) return false;
@@ -189,7 +205,7 @@ function selectPracticePool_(all,state,request,mode){
   request=request||{}; const chapter=String(request.chapter||''); const topicMode=String(mode).indexOf('topic_')===0;
   const requestedName=topicMode?resolveRequestedMajorTopic_(request):'';
   const requestedKey=topicMode?String(request.majorTopicKey||majorTopicKey_(requestedName)):'';
-  let mapped=all.filter(q=>active_(q)&&same_(q.chapter,chapter));
+  let mapped=standardStudyQuestions_(all).filter(q=>same_(q.chapter,chapter));
   if(topicMode)mapped=mapped.filter(q=>majorTopicKey_(majorTopicForQuestion_(q))===requestedKey);
   const complete=mode==='chapter'||String(mode).endsWith('_complete');
   const random=String(mode).endsWith('_random');
@@ -204,7 +220,10 @@ function selectPracticePool_(all,state,request,mode){
 }
 
 function getPlanEntries_(){
-  return sheetObjects_(getSheet_(MATHS.SHEETS.PLAN)).filter(r=>r.order&&r.chapter&&normalizeLabel_(r.status)!=='continuous').map(r=>({day:Number(r.order),chapter:String(r.chapter).trim(),targetPerDay:Number(r.target_per_day||0),status:String(r.status||'')})).filter(r=>r.day>0).sort((a,b)=>a.day-b.day);
+  return sheetObjects_(getSheet_(MATHS.SHEETS.PLAN)).filter(r=>{
+    const status=normalizeLabel_(r.status);
+    return r.order&&r.chapter&&status!=='continuous'&&status!=='inactive'&&status!=='archived'&&status!=='disabled';
+  }).map(r=>({day:Number(r.order),chapter:String(r.chapter).trim(),targetPerDay:Number(r.target_per_day||0),status:String(r.status||'')})).filter(r=>r.day>0).sort((a,b)=>a.day-b.day);
 }
 
 function getPlanEntry_(day){return getPlanEntries_().find(r=>Number(r.day)===Number(day))||null;}
@@ -212,12 +231,15 @@ function getPlanEntry_(day){return getPlanEntries_().find(r=>Number(r.day)===Num
 function dateSerial_(ymd){const p=String(ymd||'').split('-').map(Number);if(p.length!==3||!p[0]||!p[1]||!p[2])return null;return Date.UTC(p[0],p[1]-1,p[2])/86400000;}
 
 function getScheduledPlan_(){
-  const tz=studyTimezone_(); const start=String(getSetting_('plan_start_date',MATHS.DEFAULTS.plan_start_date)||'').trim();
-  const today=Utilities.formatDate(new Date(),tz,'yyyy-MM-dd'); const a=dateSerial_(start),b=dateSerial_(today); const entries=getPlanEntries_();
-  let day=(a!==null&&b!==null)?Math.floor(b-a)+1:Number(getSetting_('current_day',1)||1); if(day<1)day=1;
-  const maxDay=entries.length?Math.max.apply(null,entries.map(x=>x.day)):day; if(day>maxDay)day=maxDay;
-  let entry=getPlanEntry_(day); if(!entry&&entries.length)entry=entries.filter(x=>x.day<=day).slice(-1)[0]||entries[0];
-  return {day:entry?entry.day:day,chapter:entry?entry.chapter:String(getSetting_('today_chapter',MATHS.DEFAULTS.today_chapter)),timezone:tz,startDate:start,today:today};
+  const tz=studyTimezone_(); const start=String(getSetting_('plan_start_date','')||'').trim();
+  const today=Utilities.formatDate(new Date(),tz,'yyyy-MM-dd'); const entries=getPlanEntries_();
+  if(!entries.length)return {ready:false,day:0,chapter:'',timezone:tz,startDate:start,today:today};
+  const a=dateSerial_(start),b=dateSerial_(today);
+  let day=(a!==null&&b!==null)?Math.floor(b-a)+1:Number(getSetting_('current_day',0)||0);
+  if(day<1)day=entries[0].day;
+  const maxDay=Math.max.apply(null,entries.map(x=>x.day)); if(day>maxDay)day=maxDay;
+  let entry=getPlanEntry_(day); if(!entry)entry=entries.filter(x=>x.day<=day).slice(-1)[0]||entries[0];
+  return {ready:true,day:entry.day,chapter:entry.chapter,timezone:tz,startDate:start,today:today};
 }
 
 function chapterMatchesPlan_(questionChapter,planChapter){
@@ -242,7 +264,7 @@ function plannedDayStatus_(day){
 function getPendingPlanDays_(scheduledDay,all,state){
   return getPlanEntries_().filter(e=>e.day<scheduledDay).map(e=>{
     const status=plannedDayStatus_(e.day); if(status==='Completed')return null;
-    const core=all.filter(q=>active_(q)&&chapterMatchesPlan_(q.chapter,e.chapter)&&rotationTier_(q)==='Core');
+    const core=standardStudyQuestions_(all).filter(q=>chapterMatchesPlan_(q.chapter,e.chapter)&&rotationTier_(q)==='Core');
     const mastered=core.filter(q=>isMastered_(state[q.question_id])).length;
     return {day:e.day,chapter:e.chapter,status:status,chapterTotal:core.length,chapterRemaining:core.length-mastered};
   }).filter(Boolean);
@@ -260,7 +282,8 @@ function auditMathsRuntime_(){
   const m2Info=getChapters_().find(c=>same_(c.chapter,'Mensuration 2D')); const tri=m2Info&&(m2Info.majorTopics||[]).find(t=>t.name==='Triangle');
   const pldInfo=getChapters_().find(c=>same_(c.chapter,'Profit & Loss and Discount')); const dishonest=pldInfo&&(pldInfo.majorTopics||[]).find(t=>t.name==='Dishonest Sellers');
   const topic=(chapterName,t,mode)=>selectPracticePool_(all,state,{chapter:chapterName,majorTopicKey:t?t.key:'',count:20},mode);
-  const promotedApplicationSubtopics=all.filter(q=>active_(q)&&shouldPromoteSubtopic_(q)&&!['geometry','mensuration 2d','mensuration 3d'].includes(normalizeLabel_(q.chapter))).reduce((acc,q)=>{const name=majorTopicForQuestion_(q),key=normalizeLabel_(q.chapter)+'|'+majorTopicKey_(name);if(!acc[key])acc[key]={chapter:q.chapter,name:name,count:0};acc[key].count++;return acc;},{});
+  const promotedApplicationSubtopics=standardStudyQuestions_(all).filter(q=>shouldPromoteSubtopic_(q)&&!['geometry','mensuration 2d','mensuration 3d'].includes(normalizeLabel_(q.chapter))).reduce((acc,q)=>{const name=majorTopicForQuestion_(q),key=normalizeLabel_(q.chapter)+'|'+majorTopicKey_(name);if(!acc[key])acc[key]={chapter:q.chapter,name:name,count:0};acc[key].count++;return acc;},{});
+  const scheduled=getScheduledPlan_();
   return {
     geometry:{total:geometryInfo?geometryInfo.total:0,mastered:geometryInfo?geometryInfo.mastered:0,nonMastered:geometryInfo?geometryInfo.remaining:0,majorTopics:geometryInfo?geometryInfo.majorTopics:[],complete:chapter('Geometry','chapter_complete').pool.length,random:chapter('Geometry','chapter_random').pool.length,weak:chapter('Geometry','chapter_weak').pool.length},
     geometryCircle:circle?{mappedTotal:circle.total,mastered:circle.mastered,complete:topic('Geometry',circle,'topic_complete').pool.length,random:topic('Geometry',circle,'topic_random').pool.length,weak:topic('Geometry',circle,'topic_weak').pool.length}:null,
@@ -269,6 +292,7 @@ function auditMathsRuntime_(){
     profitLossDiscount:{total:pldInfo?pldInfo.total:0,majorTopics:pldInfo?pldInfo.majorTopics:[]},
     dishonestSellers:dishonest?{mappedTotal:dishonest.total,complete:topic('Profit & Loss and Discount',dishonest,'topic_complete').pool.length,random:topic('Profit & Loss and Discount',dishonest,'topic_random').pool.length,weak:topic('Profit & Loss and Discount',dishonest,'topic_weak').pool.length}:null,
     promotedApplicationSubtopics:Object.values(promotedApplicationSubtopics),
-    schedule:getScheduledPlan_(),pending:getPendingPlanDays_(getScheduledPlan_().day,all,state),stateDuplicates:stateDuplicateAudit_()
+    studyQuestions:standardStudyQuestions_(all).length,demandQuestions:demandQuestionIdSet_().size,
+    schedule:scheduled,pending:scheduled.ready?getPendingPlanDays_(scheduled.day,all,state):[],stateDuplicates:stateDuplicateAudit_()
   };
 }
