@@ -32,6 +32,19 @@ jobs:
           cat *.gs > /tmp/maths-server.js
           node --check /tmp/maths-server.js
 
+      - name: Validate injected Maths V2 browser JavaScript
+        shell: bash
+        run: |
+          python - <<'PY'
+          import re, pathlib, sys
+          text=pathlib.Path('MathsV2UI.html').read_text(encoding='utf-8')
+          m=re.search(r'<script>([\s\S]*?)</script>', text)
+          if not m:
+              sys.exit('MathsV2UI.html script block missing')
+          pathlib.Path('/tmp/maths-v2-ui.js').write_text(m.group(1),encoding='utf-8')
+          PY
+          node --check /tmp/maths-v2-ui.js
+
       - name: Validate required backend contracts
         shell: bash
         run: |
@@ -45,7 +58,7 @@ jobs:
         shell: bash
         run: |
           set -e
-          FRONTEND="$(cat Index.html DemandUI.gs ChapterGroupsUI.gs CompletePracticeUI.gs)"
+          FRONTEND="$(cat Index.html DemandUI.gs ChapterGroupsUI.gs CompletePracticeUI.gs MathsV2UI.html)"
           for token in openChapterHub openTopicHub chapter_random chapter_weak chapter_complete topic_random topic_weak topic_complete openStudyGroup openMocksGroup group_random group_weak group_complete openDemandSetHub renderDiagram questionSizeClass questionId toggleTheme "body.dark" "function server" "async function beginQuiz" "function openQuiz" "app.quiz" openQuestionJump qj-correct qj-wrong qj-seen "data-v2kind=\"new\"" "data-v2kind=\"starred\"" "data-v2kind=\"difficult\"" openStarredRevisionV2 openGlobalNewV2; do
             [[ "$FRONTEND" == *"$token"* ]] || { echo "Missing frontend contract: $token"; exit 1; }
           done
@@ -53,13 +66,14 @@ jobs:
           grep -q 'width:min(820px,100%)' Index.html || { echo 'Known-good fixed mobile shell missing.'; exit 1; }
           grep -q 'body.dark' Index.html || { echo 'Dark mode contract missing.'; exit 1; }
           grep -q 'webapp' appsscript.json || { echo 'Apps Script webapp manifest contract missing.'; exit 1; }
+          grep -q "HtmlService.createHtmlOutputFromFile('MathsV2UI')" CompletePracticeUI.gs || { echo 'Maths V2 UI is not wired into served HTML.'; exit 1; }
           INDEX_BYTES=$(wc -c < Index.html)
           test "$INDEX_BYTES" -ge 45000 || { echo "Index.html unexpectedly small ($INDEX_BYTES bytes); possible accidental truncation/replacement."; exit 1; }
           if grep -q 'document.body.scrollHeight' Index.html; then
             echo 'Answer auto-scroll regression detected.'
             exit 1
           fi
-          if grep -q 'MutationObserver' DemandUI.gs ChapterGroupsUI.gs CompletePracticeUI.gs; then
+          if grep -q 'MutationObserver' DemandUI.gs ChapterGroupsUI.gs CompletePracticeUI.gs MathsV2UI.html; then
             echo 'Global DOM observer regression detected.'
             exit 1
           fi
