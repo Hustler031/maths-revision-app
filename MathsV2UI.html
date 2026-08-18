@@ -1,0 +1,121 @@
+<style>
+.v2-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.v2-actions .btn{min-height:48px;font-size:12px}.v2-topic-grid,.v2-mini-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.v2-topic-card,.v2-stat-card,.v2-chapter-card{border:1px solid var(--line);border-radius:16px;background:var(--card);padding:15px;cursor:pointer}.v2-topic-card b,.v2-chapter-card b{font-size:17px}.v2-progress{height:6px;background:var(--line);border-radius:999px;overflow:hidden;margin-top:9px}.v2-progress>i{display:block;height:100%;background:var(--primary);border-radius:999px}.v2-home-stats,.v2-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:11px}.v2-home-stats>div,.v2-metric{padding:9px 6px;text-align:center;border-radius:11px;background:rgba(255,255,255,.13)}.v2-metric{background:var(--primary2)}.v2-home-stats b,.v2-metric b{display:block;font-size:18px}.v2-badge{display:inline-flex;padding:4px 7px;border-radius:999px;font-size:10px;font-weight:850;margin-right:4px}.v2-badge.star{background:var(--warnbg);color:var(--warn)}.v2-badge.diff{background:var(--badbg);color:var(--bad)}.question-jump-grid .qj-correct{background:var(--okbg);color:var(--ok);border-color:var(--ok)}.question-jump-grid .qj-wrong{background:var(--badbg);color:var(--bad);border-color:var(--bad)}.question-jump-grid .qj-seen{background:var(--warnbg);color:var(--warn);border-color:var(--warn)}.question-jump-grid .qj-current{outline:2px solid var(--primary);outline-offset:1px}.v2-hero{background:linear-gradient(135deg,#3153d2,#6e83e2);color:#fff;border:0}.v2-hero .muted{color:rgba(255,255,255,.84)}
+@media(max-width:390px){.v2-actions{grid-template-columns:repeat(2,minmax(0,1fr))}.v2-topic-grid,.v2-mini-grid{grid-template-columns:1fr}}
+</style>
+<script>
+(function(){
+  'use strict';
+  var CACHE='maths-v2:';
+  function getCache(k){try{return JSON.parse(localStorage.getItem(CACHE+k)||'null')}catch(e){return null}}
+  function setCache(k,v){try{localStorage.setItem(CACHE+k,JSON.stringify(v))}catch(e){}return v}
+  function dropCache(k){try{localStorage.removeItem(CACHE+k)}catch(e){}}
+  function callV2(fn){
+    var args=[].slice.call(arguments,1);
+    return new Promise(function(resolve,reject){
+      var r=google.script.run.withSuccessHandler(resolve).withFailureHandler(function(e){reject(new Error(e&&e.message?e.message:String(e)))});
+      if(fn==='getMathsV2Bootstrap')r.getMathsV2Bootstrap();
+      else if(fn==='getMathsProgressV2')r.getMathsProgressV2();
+      else if(fn==='getStarredRevisionV2')r.getStarredRevisionV2();
+      else if(fn==='startMathsV2Quiz')r.startMathsV2Quiz(args[0]);
+      else if(fn==='toggleImportantV2')r.toggleImportantV2(args[0],args[1]);
+      else if(fn==='toggleDifficultV2')r.toggleDifficultV2(args[0],args[1]);
+      else if(fn==='getSessionAttemptMapV2')r.getSessionAttemptMapV2(args[0]);
+      else reject(new Error('Unknown V2 function: '+fn));
+    });
+  }
+  window.MathV2={call:callV2,get:getCache,set:setCache,drop:dropCache};
+
+  function countPicker(title,request){
+    var modal=$('#modal');modal.className='modal';
+    modal.innerHTML='<div class="sheet"><div class="row between"><div><div class="eyebrow">'+esc(title)+'</div><div class="quiz-title">How many questions?</div></div><button class="iconbtn" id="v2CountClose">×</button></div><div class="v2-actions" style="margin-top:15px"><button class="btn soft" data-v2count="10">10</button><button class="btn soft" data-v2count="20">20</button><button class="btn soft" data-v2count="25">25</button></div></div>';
+    $('#v2CountClose').onclick=closeModal;
+    modal.querySelectorAll('[data-v2count]').forEach(function(b){b.onclick=function(){closeModal();startV2(Object.assign({},request,{count:Number(b.dataset.v2count)}))}});
+  }
+  async function startV2(request){
+    loading(true);
+    try{var s=await callV2('startMathsV2Quiz',request);loading(false);if(!s||s.ok===false){toast((s&&s.message)||'No eligible questions');return}openQuiz(s)}
+    catch(e){loading(false);toast(e.message||String(e))}
+  }
+  function sixActions(){return '<div class="v2-actions"><button class="btn soft" data-v2kind="random">🔀 Random</button><button class="btn ghost" data-v2kind="weak">🎯 Weak</button><button class="btn ghost" data-v2kind="all">📚 Practice All</button><button class="btn ghost" data-v2kind="new">🆕 New</button><button class="btn ghost" data-v2kind="starred">⭐ Starred</button><button class="btn warn" data-v2kind="difficult">🔥 Difficult</button></div>'}
+  function bindSix(root,request){
+    root.querySelectorAll('[data-v2kind]').forEach(function(b){
+      b.onclick=function(){var kind=b.dataset.v2kind,r=Object.assign({},request,{kind:kind});if(kind==='all')startV2(r);else countPicker((request.title||request.chapter||request.majorTopic||'Practice')+' · '+b.textContent.trim(),r)};
+    });
+  }
+  function groupFor(chapter){var x=String(chapter||'').toLowerCase();if(/fraction pattern|triplet|calculation memory|square|cube/.test(x))return'misc';if(/percentage|profit|loss|discount|ratio|proportion|average|mixture|alligation|interest|time.*work|pipe|cistern|speed|distance|train|boat|stream|partnership|ages|work.*wage/.test(x))return'arithmetic';return'advanced'}
+
+  var oldOpenChapter=window.openChapterHub;
+  window.openChapterHub=function(chapter){
+    var c=(app.bootstrap.chapters||[]).find(function(x){return String(x.chapter)===String(chapter)});if(!c){return oldOpenChapter(chapter)}
+    app.view='chapters';nav('chapters');
+    var topics=c.majorTopics||[],attempted=Math.max(0,Number(c.total||0)-Number(c.remaining||0)),pct=Number(c.total||0)?Math.round(attempted*100/Number(c.total)):0;
+    $('#main').innerHTML='<div class="content"><button class="btn ghost" id="v2ChapterBack">← Chapters</button><div style="margin:15px 2px 12px"><div class="eyebrow">Chapter</div><div class="quiz-title" style="font-size:26px">'+esc(chapter)+'</div><div class="muted" style="margin-top:5px">'+Number(c.total||0)+' cards · '+attempted+' attempted</div><div class="v2-progress"><i style="width:'+pct+'%"></i></div></div><div class="card">'+sixActions()+'</div><div class="section-title">Study banks</div><div class="v2-topic-grid">'+topics.map(function(t){return '<div class="v2-topic-card" data-v2topic="'+esc(t.key||t.name)+'"><b>'+esc(t.name)+'</b><div class="muted" style="margin-top:5px">'+Number(t.total||0)+' cards · '+Number(t.active||0)+' active</div></div>'}).join('')+'</div></div>';
+    $('#v2ChapterBack').onclick=chapters;bindSix($('#main'),{scope:'chapter',chapter:chapter,title:chapter});
+    $('#main').querySelectorAll('[data-v2topic]').forEach(function(card){card.onclick=function(){openTopicHub(chapter,card.dataset.v2topic)}});window.scrollTo(0,0);
+  };
+
+  var oldOpenTopic=window.openTopicHub;
+  window.openTopicHub=function(chapter,key){
+    var c=(app.bootstrap.chapters||[]).find(function(x){return String(x.chapter)===String(chapter)}),t=c&&(c.majorTopics||[]).find(function(x){return String(x.key||x.name)===String(key)});if(!t){return oldOpenTopic(chapter,key)}
+    app.view='chapters';nav('chapters');
+    $('#main').innerHTML='<div class="content"><button class="btn ghost" id="v2TopicBack">← '+esc(chapter)+'</button><div style="margin:15px 2px 12px"><div class="eyebrow">'+esc(chapter)+'</div><div class="quiz-title" style="font-size:25px">'+esc(t.name)+'</div><div class="muted" style="margin-top:5px">'+Number(t.total||0)+' cards · '+Number(t.active||0)+' active</div></div><div class="card">'+sixActions()+'</div></div>';
+    $('#v2TopicBack').onclick=function(){openChapterHub(chapter)};bindSix($('#main'),{scope:'topic',chapter:chapter,majorTopic:t.key||t.name,title:chapter+' · '+t.name});window.scrollTo(0,0);
+  };
+
+  window.openStudyGroup=function(key){
+    if(key==='mocks'){if(typeof openMocksGroup==='function')return openMocksGroup();return}
+    var list=(app.bootstrap.chapters||[]).filter(function(c){return groupFor(c.chapter)===key});
+    var title=key==='advanced'?'Advanced':key==='arithmetic'?'Arithmetic':'MISC',total=list.reduce(function(a,c){return a+Number(c.total||0)},0),active=list.reduce(function(a,c){return a+Number(c.remaining||0)},0);
+    app.view='chapters';nav('chapters');
+    $('#main').innerHTML='<div class="content"><button class="btn ghost" id="v2GroupBack">← Practice Hub</button><div class="section-title" style="font-size:18px">'+esc(title.toUpperCase())+'</div><div class="card"><div class="muted" style="margin-bottom:10px">'+total+' cards · '+active+' active</div>'+sixActions()+'</div><div class="section-title">Chapters</div><div class="list">'+list.map(function(c){return '<div class="v2-chapter-card" data-v2chapter="'+esc(c.chapter)+'"><div class="row between"><div><b>'+esc(c.chapter)+'</b><div class="muted" style="margin-top:4px">'+Number(c.total||0)+' cards · '+Number(c.remaining||0)+' active</div></div><span class="tag">Open</span></div></div>'}).join('')+'</div></div>';
+    $('#v2GroupBack').onclick=chapters;bindSix($('#main'),{scope:'group',chapters:list.map(function(c){return c.chapter}),groupName:key,title:title});$('#main').querySelectorAll('[data-v2chapter]').forEach(function(x){x.onclick=function(){openChapterHub(x.dataset.v2chapter)}});window.scrollTo(0,0);
+  };
+
+  var oldRenderQuestion=window.renderQuestion;
+  window.renderQuestion=function(){
+    oldRenderQuestion();if(!app.quiz)return;
+    var q=app.quiz.questions[app.quiz.index],master=$('#masterBtn'),mark=$('#markBtn'),tools=document.querySelector('.dock-tools');if(!q||!tools)return;
+    if(master)master.style.display='none';
+    if(mark){mark.textContent=(q.important||q.marked)?'⭐ Important':'☆ Important';mark.className='btn '+((q.important||q.marked)?'warn':'ghost')+' small';mark.onclick=async function(){try{var r=await callV2('toggleImportantV2',q.questionId,app.quiz.sessionId);q.important=r.important;q.marked=r.important;renderQuestion();dropCache('home');dropCache('starred')}catch(e){toast(e.message||String(e))}}}
+    if(!tools.querySelector('[data-v2-difficult]')){var d=document.createElement('button');d.setAttribute('data-v2-difficult','1');d.className='btn '+(q.difficult?'warn':'ghost')+' small';d.textContent=q.difficult?'🔥 Difficult':'◇ Difficult';d.onclick=async function(){try{var r=await callV2('toggleDifficultV2',q.questionId,app.quiz.sessionId);q.difficult=r.difficult;renderQuestion();dropCache('home');dropCache('starred')}catch(e){toast(e.message||String(e))}};tools.appendChild(d)}
+  };
+
+  window.openQuestionJump=async function(){
+    if(!app.quiz||!app.quiz.questions||!app.quiz.questions.length)return;var total=app.quiz.questions.length,current=app.quiz.index+1,map={};
+    try{map=await callV2('getSessionAttemptMapV2',app.quiz.sessionId)}catch(e){}
+    var modal=$('#modal'),buttons='';modal.className='modal';
+    for(var i=1;i<=total;i++){var q=app.quiz.questions[i-1],s=map[String(q.questionId||'')]||'',cls=s==='correct'?'qj-correct':s==='wrong'?'qj-wrong':s==='seen'?'qj-seen':'';if(i===current)cls+=' qj-current';buttons+='<button class="btn ghost '+cls+'" data-jump-q="'+i+'">'+i+'</button>'}
+    modal.innerHTML='<div class="sheet"><div class="row between"><div><div class="eyebrow">Question selector</div><div class="quiz-title">Jump to question</div></div><button class="iconbtn" id="jumpClose">×</button></div><div class="muted" style="font-size:12px;margin-top:5px"><span style="color:var(--ok)">● Correct</span> · <span style="color:var(--bad)">● Wrong</span> · <span style="color:var(--warn)">● Revealed</span> · Neutral unanswered</div><div class="question-jump-grid">'+buttons+'</div></div>';
+    $('#jumpClose').onclick=closeModal;modal.querySelectorAll('[data-jump-q]').forEach(function(btn){btn.onclick=function(){var target=Math.max(1,Math.min(total,Number(btn.dataset.jumpQ||1)));closeModal();app.quiz.index=target-1;app.qStart=Date.now();renderQuestion();window.scrollTo(0,0);server('saveSessionPosition',app.quiz.sessionId,app.quiz.index).catch(function(){})}});
+  };
+
+  function renderHomeV2(data){
+    if(app.view!=='home')return;var resume=app.bootstrap.resume,s=data.schedule||{},day=Number(s.day||0),chapter=String(s.chapter||''),heroTitle=day>0?('Day '+day+' · '+chapter):'Daily Practice',heroSub=day>0?'20 questions from today’s lecture':'20-question daily target';
+    $('#main').innerHTML='<div class="content grid">'+(resume?'<div class="card row between"><div><div class="eyebrow">Continue where you left off</div><b>'+esc(resume.title)+'</b><div class="muted">Question '+(Number(resume.currentIndex||0)+1)+' of '+Number(resume.total||0)+'</div></div><button class="btn soft" id="v2Resume">Resume</button></div>':'')+'<div class="card v2-hero"><div class="eyebrow">Today’s Maths</div><h2>'+esc(heroTitle)+'</h2><div class="muted">'+esc(heroSub)+'</div><div class="v2-home-stats"><div><b>20</b>Daily</div><div><b>'+Number(data.starred||0)+'</b>Starred</div><div><b>'+Number(data.difficult||0)+'</b>Difficult</div></div><button class="btn primary" id="v2DailyStart" style="margin-top:12px">'+(day>0?'Start Daily 20':'Start New Practice')+'</button></div><div class="v2-mini-grid"><div class="v2-stat-card" id="v2New"><div class="eyebrow">🆕 New Practice</div><b>'+Number(data.newCount||0)+'</b><div class="muted">Unseen questions</div></div><div class="v2-stat-card" id="v2Starred"><div class="eyebrow">⭐ Starred Revision</div><b>'+Number(data.starred||0)+'</b><div class="muted">'+Number(data.difficult||0)+' difficult</div></div></div><div class="card"><div class="row between"><b>Progress</b><button class="btn ghost small" id="v2ProgressOpen">Open</button></div><div class="v2-metrics"><div class="v2-metric"><b>'+Number(data.coverage||0)+'%</b>Coverage</div><div class="v2-metric"><b>'+Number(data.accuracy||0)+'%</b>Accuracy</div><div class="v2-metric"><b>'+Number(data.weak||0)+'</b>Weak</div></div></div></div>';
+    if(resume)$('#v2Resume').onclick=function(){resumeQuiz(resume.sessionId)};$('#v2DailyStart').onclick=function(){if(day>0)beginQuiz('daily',{planDay:day,planChapter:chapter});else countPicker('New Practice',{scope:'group',chapters:[],kind:'new',title:'New Practice'})};$('#v2New').onclick=openGlobalNewV2;$('#v2Starred').onclick=openStarredRevisionV2;$('#v2ProgressOpen').onclick=function(){showView('progress')};
+  }
+  async function loadHomeV2(){var cached=getCache('home');if(cached)renderHomeV2(cached);try{var fresh=await callV2('getMathsV2Bootstrap');setCache('home',fresh);renderHomeV2(fresh)}catch(e){if(!cached)toast('Could not load updated Home')}}
+  window.home=function(){nav('home');loadHomeV2()};
+
+  window.openGlobalNewV2=async function(){
+    app.view='home';nav('home');loading(true);try{var p=await callV2('getMathsProgressV2');loading(false);var rows=(p.chapters||[]).filter(function(c){return Number(c.metric&&c.metric.unseen||0)>0});$('#main').innerHTML='<div class="content"><button class="btn ghost" id="v2NewBack">← Home</button><div class="section-title" style="font-size:20px">New Practice</div><div class="muted" style="margin-bottom:12px">Recently added / unseen questions. No duplicate database rows.</div><div class="list">'+rows.map(function(c){return '<div class="v2-chapter-card" data-new-chapter="'+esc(c.chapter)+'"><div class="row between"><div><b>'+esc(c.chapter)+'</b><div class="muted">'+Number(c.metric.unseen||0)+' unseen</div></div><span class="tag">Practice</span></div></div>'}).join('')+'</div></div>';$('#v2NewBack').onclick=home;$('#main').querySelectorAll('[data-new-chapter]').forEach(function(x){x.onclick=function(){countPicker(x.dataset.newChapter+' · New',{scope:'chapter',chapter:x.dataset.newChapter,kind:'new',title:x.dataset.newChapter})}});window.scrollTo(0,0)}catch(e){loading(false);toast(e.message||String(e))}
+  };
+
+  window.openStarredRevisionV2=async function(){
+    app.view='library';nav('library');var cached=getCache('starred');loading(!cached);try{var d=cached||await callV2('getStarredRevisionV2');if(!cached)setCache('starred',d);loading(false);renderStarred(d);callV2('getStarredRevisionV2').then(function(f){setCache('starred',f);if(app.view==='library')renderStarred(f)}).catch(function(){})}catch(e){loading(false);toast(e.message||String(e))}
+  };
+  function renderStarred(d){
+    var items=d.items||[];$('#main').innerHTML='<div class="content"><button class="btn ghost" id="v2StarBack">← Library</button><div class="section-title" style="font-size:20px">⭐ Starred Revision</div><div class="v2-metrics"><div class="v2-metric"><b>'+Number(d.stats&&d.stats.total||0)+'</b>All</div><div class="v2-metric"><b>'+Number(d.stats&&d.stats.important||0)+'</b>Important</div><div class="v2-metric"><b>'+Number(d.stats&&d.stats.difficult||0)+'</b>Difficult</div></div><div class="v2-actions" style="margin-top:12px"><button class="btn ghost" id="v2StarAll">⭐ All</button><button class="btn ghost" id="v2StarImportant">Important</button><button class="btn warn" id="v2StarDifficult">🔥 Difficult</button></div><div class="section-title">Recent starred</div><div class="list">'+items.slice(0,40).map(function(x){return '<div class="list-card"><div>'+((x.important)?'<span class="v2-badge star">Important</span>':'')+((x.difficult)?'<span class="v2-badge diff">Difficult</span>':'')+'</div><b style="display:block;margin-top:5px">'+esc(x.chapter)+'</b><div class="muted" style="font-size:12px;margin-top:3px">Day '+Number(x.day||1)+' · '+esc(x.topic||'')+'</div></div>'}).join('')+'</div></div>';$('#v2StarBack').onclick=library;$('#v2StarAll').onclick=function(){countPicker('Starred Revision',{scope:'group',chapters:[],kind:'starred',title:'Starred Revision'})};$('#v2StarImportant').onclick=$('#v2StarAll').onclick;$('#v2StarDifficult').onclick=function(){countPicker('Difficult Revision',{scope:'group',chapters:[],kind:'difficult',title:'Difficult Revision'})};window.scrollTo(0,0);
+  }
+
+  var oldLibrary=window.library;
+  window.library=function(){oldLibrary();var cards=[].slice.call(document.querySelectorAll('#main .action-card'));cards.forEach(function(c){if((c.textContent||'').indexOf('Marked')>=0){c.querySelector('.action-title').textContent='Starred Revision';c.onclick=openStarredRevisionV2}})};
+
+  window.progress=async function(){
+    app.view='progress';nav('progress');var cached=getCache('progress');if(cached)renderProgressV2(cached);else loading(true);try{var p=await callV2('getMathsProgressV2');setCache('progress',p);loading(false);renderProgressV2(p)}catch(e){loading(false);if(!cached)toast(e.message||String(e))}
+  };
+  function renderProgressV2(p){if(app.view!=='progress')return;var o=p.overall||{};$('#main').innerHTML='<div class="content"><div class="section-title" style="font-size:20px">Progress</div><div class="v2-metrics"><div class="v2-metric"><b>'+Number(o.coverage||0)+'%</b>Coverage</div><div class="v2-metric"><b>'+Number(o.accuracy||0)+'%</b>Accuracy</div><div class="v2-metric"><b>'+Number(o.difficult||0)+'</b>Difficult</div></div><div class="section-title">Advanced vs Arithmetic</div><div class="v2-mini-grid"><div class="card"><b>Advanced</b><div class="muted">'+Number(p.advanced&&p.advanced.coverage||0)+'% coverage · '+Number(p.advanced&&p.advanced.accuracy||0)+'% accuracy</div></div><div class="card"><b>Arithmetic</b><div class="muted">'+Number(p.arithmetic&&p.arithmetic.coverage||0)+'% coverage · '+Number(p.arithmetic&&p.arithmetic.accuracy||0)+'% accuracy</div></div></div><div class="section-title">Chapters</div><div class="list">'+(p.chapters||[]).map(function(c){return '<div class="list-card"><b>'+esc(c.chapter)+'</b><div class="muted" style="margin-top:4px">'+Number(c.metric.coverage||0)+'% coverage · '+Number(c.metric.accuracy||0)+'% accuracy · '+Number(c.metric.difficult||0)+' difficult</div></div>'}).join('')+'</div></div>'}
+
+  document.addEventListener('DOMContentLoaded',function(){setTimeout(function(){if(app.view==='home')loadHomeV2();callV2('getMathsProgressV2').then(function(p){setCache('progress',p)}).catch(function(){})},300)});
+})();
+</script>
