@@ -37,7 +37,7 @@ jobs:
         run: |
           set -e
           SERVER="$(cat *.gs)"
-          for token in chapter_random chapter_weak chapter_complete topic_random topic_weak topic_complete group_random group_weak group_complete selectGroupPractice_ majorTopicForQuestion_ selectCalculationTraining_ getDemandSets_ getScheduledPlan_ auditMathsRuntime_ questionId; do
+          for token in chapter_random chapter_weak chapter_complete topic_random topic_weak topic_complete group_random group_weak group_complete selectGroupPractice_ majorTopicForQuestion_ selectCalculationTraining_ getDemandSets_ getScheduledPlan_ auditMathsRuntime_ questionId startMathsV2Quiz getMathsV2Bootstrap getMathsProgressV2 getStarredRevisionV2 toggleImportantV2 toggleDifficultV2 getSessionAttemptMapV2; do
             [[ "$SERVER" == *"$token"* ]] || { echo "Missing backend contract: $token"; exit 1; }
           done
 
@@ -45,19 +45,21 @@ jobs:
         shell: bash
         run: |
           set -e
-          FRONTEND="$(cat Index.html DemandUI.gs ChapterGroupsUI.gs)"
-          for token in openChapterHub openTopicHub chapter_random chapter_weak chapter_complete topic_random topic_weak topic_complete openStudyGroup openMocksGroup group_random group_weak group_complete openDemandSetHub renderDiagram questionSizeClass questionId toggleTheme "body.dark" "function server" "async function beginQuiz" "function openQuiz" "app.quiz"; do
+          FRONTEND="$(cat Index.html DemandUI.gs ChapterGroupsUI.gs CompletePracticeUI.gs)"
+          for token in openChapterHub openTopicHub chapter_random chapter_weak chapter_complete topic_random topic_weak topic_complete openStudyGroup openMocksGroup group_random group_weak group_complete openDemandSetHub renderDiagram questionSizeClass questionId toggleTheme "body.dark" "function server" "async function beginQuiz" "function openQuiz" "app.quiz" openQuestionJump qj-correct qj-wrong qj-seen "data-v2kind=\"new\"" "data-v2kind=\"starred\"" "data-v2kind=\"difficult\"" openStarredRevisionV2 openGlobalNewV2; do
             [[ "$FRONTEND" == *"$token"* ]] || { echo "Missing frontend contract: $token"; exit 1; }
           done
           grep -q 'viewport-fit=cover' Index.html || { echo 'Known-good viewport contract missing.'; exit 1; }
           grep -q 'width:min(820px,100%)' Index.html || { echo 'Known-good fixed mobile shell missing.'; exit 1; }
+          grep -q 'body.dark' Index.html || { echo 'Dark mode contract missing.'; exit 1; }
+          grep -q 'webapp' appsscript.json || { echo 'Apps Script webapp manifest contract missing.'; exit 1; }
           INDEX_BYTES=$(wc -c < Index.html)
           test "$INDEX_BYTES" -ge 45000 || { echo "Index.html unexpectedly small ($INDEX_BYTES bytes); possible accidental truncation/replacement."; exit 1; }
           if grep -q 'document.body.scrollHeight' Index.html; then
             echo 'Answer auto-scroll regression detected.'
             exit 1
           fi
-          if grep -q 'MutationObserver' DemandUI.gs ChapterGroupsUI.gs; then
+          if grep -q 'MutationObserver' DemandUI.gs ChapterGroupsUI.gs CompletePracticeUI.gs; then
             echo 'Global DOM observer regression detected.'
             exit 1
           fi
