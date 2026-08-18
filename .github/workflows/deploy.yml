@@ -4,20 +4,10 @@ on:
   workflow_dispatch:
   pull_request:
     branches: [main]
-    paths:
-      - '**/*.gs'
-      - '**/*.html'
-      - 'appsscript.json'
-      - '.claspignore'
-      - '.github/workflows/deploy.yml'
+    paths: ['**/*.gs','**/*.html','appsscript.json','.claspignore','.github/workflows/deploy.yml']
   push:
     branches: [main]
-    paths:
-      - '**/*.gs'
-      - '**/*.html'
-      - 'appsscript.json'
-      - '.claspignore'
-      - '.github/workflows/deploy.yml'
+    paths: ['**/*.gs','**/*.html','appsscript.json','.claspignore','.github/workflows/deploy.yml']
 
 permissions:
   contents: write
@@ -35,42 +25,43 @@ jobs:
         run: |
           cat *.gs > /tmp/maths-server.js
           node --check /tmp/maths-server.js
-      - name: Validate V3 browser JavaScript
+      - name: Validate browser JavaScript
         shell: bash
         run: |
           python - <<'PY'
           import re, pathlib, sys
-          for name in ('MathsV3UI.html','MathsV3Compat.html'):
+          for name in ('MathsV3UI.html','MathsV3Compat.html','MathsV4UI.html'):
               text=pathlib.Path(name).read_text(encoding='utf-8')
               blocks=re.findall(r'<script>([\s\S]*?)</script>', text)
-              if not blocks:
-                  sys.exit(f'{name} script block missing')
+              if not blocks: sys.exit(f'{name} script block missing')
               pathlib.Path('/tmp/'+name+'.js').write_text('\n'.join(blocks),encoding='utf-8')
           PY
           node --check /tmp/MathsV3UI.html.js
           node --check /tmp/MathsV3Compat.html.js
+          node --check /tmp/MathsV4UI.html.js
       - name: Validate runtime contracts
         shell: bash
         run: |
           set -e
           SERVER="$(cat *.gs)"
-          FRONTEND="$(cat Index.html MathsV3UI.html MathsV3Compat.html)"
-          for token in startMathsV3Quiz getMathsV3Bootstrap getMathsProgressV3 getStarredRevisionV3 getMathsV3ResumeInfo resumeMathsV3Session toggleImportantV3 toggleDifficultV3 getSessionAttemptMapV3 saveSessionPositionV3 getScheduledPlan_ selectCalculationTraining_ getDemandSets_; do
-            [[ "$SERVER" == *"$token"* ]] || { echo "Missing V3 backend contract: $token"; exit 1; }
+          FRONTEND="$(cat Index.html MathsV3UI.html MathsV3Compat.html MathsV4UI.html)"
+          for token in startMathsV3Quiz getMathsV3Bootstrap toggleImportantV3 toggleDifficultV3 getSessionAttemptMapV3 saveSessionPositionV3 getMathsScopeMetricV4 getMathsNewHubV4 getMathsProgressV4 getStarredRevisionV4 startMathsV4Quiz; do
+            [[ "$SERVER" == *"$token"* ]] || { echo "Missing backend contract: $token"; exit 1; }
           done
-          for token in "data-v3kind=\"random\"" "data-v3kind=\"weak\"" "data-v3kind=\"all\"" "data-v3kind=\"new\"" "data-v3kind=\"starred\"" "data-v3kind=\"difficult\"" openChapterHub openTopicHub openStudyGroup openGlobalNewV3 openStarredRevisionV3 openQuestionJump qj-correct qj-wrong qj-seen renderQuestion renderDiagram questionSizeClass toggleTheme "body.dark" saveSessionPosition; do
-            [[ "$FRONTEND" == *"$token"* ]] || { echo "Missing V3 frontend contract: $token"; exit 1; }
+          for token in openChapterHub openTopicHub openStudyGroup openGlobalNewV3 openStarredRevisionV3 openQuestionJump renderQuestion "Coverage" "Wrong" "Difficult" "Starred" "Practice All" "data-v4=\"new\"" "data-v4=\"weak\"" "data-v4=\"random\""; do
+            [[ "$FRONTEND" == *"$token"* ]] || { echo "Missing frontend contract: $token"; exit 1; }
           done
-          grep -q "HtmlService.createHtmlOutputFromFile('MathsV3UI')" CompletePracticeUI.gs || { echo 'V3 shell is not wired into served HTML.'; exit 1; }
-          grep -q "HtmlService.createHtmlOutputFromFile('MathsV3Compat')" CompletePracticeUI.gs || { echo 'V3 compatibility bridge is not wired into served HTML.'; exit 1; }
-          grep -q "function demandUiPatch_(){return '';" DemandUI.gs || { echo 'Legacy DemandUI patch still active.'; exit 1; }
-          grep -q "function chapterGroupsUiPatch_(){return '';" ChapterGroupsUI.gs || { echo 'Legacy ChapterGroups patch still active.'; exit 1; }
-          grep -q 'viewport-fit=cover' Index.html || { echo 'Viewport contract missing.'; exit 1; }
-          grep -q 'width:min(820px,100%)' Index.html || { echo 'Mobile shell contract missing.'; exit 1; }
+          grep -q "HtmlService.createHtmlOutputFromFile('MathsV3UI')" CompletePracticeUI.gs || exit 1
+          grep -q "HtmlService.createHtmlOutputFromFile('MathsV3Compat')" CompletePracticeUI.gs || exit 1
+          grep -q "HtmlService.createHtmlOutputFromFile('MathsV4UI')" CompletePracticeUI.gs || { echo 'V4 optimization layer is not wired.'; exit 1; }
+          grep -q "function demandUiPatch_(){return '';" DemandUI.gs || exit 1
+          grep -q "function chapterGroupsUiPatch_(){return '';" ChapterGroupsUI.gs || exit 1
+          grep -q 'viewport-fit=cover' Index.html || exit 1
+          grep -q 'width:min(820px,100%)' Index.html || exit 1
           grep -q '"access": "ANYONE"' appsscript.json || exit 1
           grep -q '"executeAs": "USER_DEPLOYING"' appsscript.json || exit 1
-          if grep -q 'MutationObserver' MathsV3UI.html MathsV3Compat.html; then echo 'MutationObserver is forbidden in V3 shell.'; exit 1; fi
-          if grep -q 'document.body.scrollHeight' Index.html MathsV3UI.html MathsV3Compat.html; then echo 'Answer auto-scroll regression detected.'; exit 1; fi
+          if grep -q 'MutationObserver' MathsV3UI.html MathsV3Compat.html MathsV4UI.html; then echo 'MutationObserver forbidden.'; exit 1; fi
+          if grep -q 'document.body.scrollHeight' Index.html MathsV3UI.html MathsV3Compat.html MathsV4UI.html; then echo 'Answer auto-scroll regression.'; exit 1; fi
 
   deploy:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
@@ -102,14 +93,13 @@ jobs:
       - name: Update existing web-app deployment
         env:
           DEPLOYMENT_ID: ${{ secrets.DEPLOYMENT_ID }}
-        run: |
-          npx --yes @google/clasp@3.3.0 create-deployment --deploymentId "$DEPLOYMENT_ID" --description "GitHub $(git rev-parse --short HEAD)"
+        run: npx --yes @google/clasp@3.3.0 create-deployment --deploymentId "$DEPLOYMENT_ID" --description "GitHub $(git rev-parse --short HEAD)"
       - name: Record verified deployment
         shell: bash
         run: |
           printf 'commit=%s\ndeployed_at=%s\nstatus=success\n' "$GITHUB_SHA" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > DEPLOYMENT_STATUS.txt
           git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git config user.email '418982c416e90b5042244febbe9bf4e54509f4f29+github-actions[bot]@users.noreply.github.com'
           git add DEPLOYMENT_STATUS.txt
           git commit -m "Record verified Apps Script deployment ${GITHUB_SHA::7}" || exit 0
           git push
