@@ -109,3 +109,5 @@ function getStarredRevisionV2(){
   const current=mathsV2Day_(),groups=[];for(let d=current;d>=Math.max(1,current-9);d--){const part=items.filter(x=>x.day===d);if(part.length)groups.push({label:'Day '+d,fromDay:d,toDay:d,count:part.length,important:part.filter(x=>x.important).length,difficult:part.filter(x=>x.difficult).length});}
   return {currentDay:current,stats:{total:items.length,important:items.filter(x=>x.important).length,difficult:items.filter(x=>x.difficult).length},groups,items:items.sort((a,b)=>b.day-a.day)};
 }
+
+// Deployment trigger marker: Maths V2 rollout.
