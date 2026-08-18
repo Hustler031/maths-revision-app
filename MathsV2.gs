@@ -45,8 +45,22 @@ function scopePoolMathsV2_(request){
   });
 }
 
+function sameV2Scope_(a,b){
+  a=a||{};b=b||{};
+  const arr=x=>(x||[]).map(String).sort().join('|');
+  return String(a.scope||'')===String(b.scope||'')&&String(a.chapter||'')===String(b.chapter||'')&&String(a.majorTopic||a.majorTopicKey||'')===String(b.majorTopic||b.majorTopicKey||'')&&arr(a.chapters)===arr(b.chapters)&&String(a.groupName||'')===String(b.groupName||'');
+}
+function enhanceV2Payload_(payload,state){if(payload&&Array.isArray(payload.questions))payload.questions.forEach(x=>{const s=state[x.questionId]||{};x.difficult=isDifficultV2_(s);x.important=isMarked_(s);});return payload;}
+function resumeV2All_(request,state){
+  const rows=sheetObjects_(getSheet_(MATHS.SHEETS.SESSIONS)).filter(r=>String(r.mode||'')==='v2_all'&&!bool_(r.completed)).sort((a,b)=>new Date(b.updated_at)-new Date(a.updated_at));
+  const found=rows.find(r=>sameV2Scope_(json_(r.params_json,{}),request));if(!found)return null;
+  return enhanceV2Payload_(resumeSession(String(found.session_id)),state);
+}
+
 function startMathsV2Quiz(request){
-  ensureMathsV2_();request=request||{};const state=getStateMap_(),kind=String(request.kind||'random').toLowerCase(),count=Math.max(1,Math.min(100,Number(request.count||20)));let pool=scopePoolMathsV2_(request),label='Practice';
+  ensureMathsV2_();request=request||{};const state=getStateMap_(),kind=String(request.kind||'random').toLowerCase(),count=Math.max(1,Math.min(100,Number(request.count||20)));
+  if(kind==='all'&&!request.restart){const resumed=resumeV2All_(request,state);if(resumed&&resumed.ok!==false)return resumed;}
+  let pool=scopePoolMathsV2_(request),label='Practice';
   if(kind==='new'){pool=pool.filter(q=>Number((state[q.question_id]||{}).attempts||0)===0);label='New';}
   else if(kind==='starred'||kind==='important'){pool=pool.filter(q=>isMarked_(state[q.question_id]));label='Starred';}
   else if(kind==='difficult'){pool=pool.filter(q=>isDifficultV2_(state[q.question_id]));label='Difficult';}
@@ -59,8 +73,7 @@ function startMathsV2Quiz(request){
   if(kind!=='all'&&kind!=='weak')pool=shuffle_(pool);
   if(kind!=='all')pool=pool.slice(0,Math.min(count,pool.length));
   if(!pool.length)return {ok:false,message:'No eligible '+label.toLowerCase()+' questions found for this selection.'};
-  const titleBase=String(request.title||request.majorTopic||request.chapter||request.groupName||'Maths'),title=titleBase+' · '+label,sessionId=Utilities.getUuid(),mode='v2_'+kind,payload=sessionPayload_(sessionId,pool,state,title,mode,0,null);
-  payload.questions.forEach(x=>{const s=state[x.questionId]||{};x.difficult=isDifficultV2_(s);x.important=isMarked_(s);});
+  const titleBase=String(request.title||request.majorTopic||request.chapter||request.groupName||'Maths'),title=titleBase+' · '+label,sessionId=Utilities.getUuid(),mode='v2_'+kind,payload=enhanceV2Payload_(sessionPayload_(sessionId,pool,state,title,mode,0,null),state);
   saveSession_({session_id:sessionId,mode,title,question_ids_json:JSON.stringify(pool.map(q=>q.question_id)),current_index:0,updated_at:new Date(),completed:false,params_json:JSON.stringify(request)});
   return payload;
 }
@@ -74,11 +87,12 @@ function mathsProgressMetricV2_(questions,state){
   ids.forEach(id=>{const s=state[id]||{},a=Number(s.attempts||0);if(a>0)attempted++;if(String(s.last_result||'').toLowerCase()==='correct')correct++;if(isDifficultV2_(s))difficult++;if(isMarked_(s))starred++;if(isDifficultV2_(s)||String(s.last_result||'').toLowerCase()==='wrong'||Number(s.last_response_sec||0)>=20)weak++;});
   return {total,attempted,unseen:Math.max(0,total-attempted),coverage:total?Math.round(attempted*1000/total)/10:0,accuracy:attempted?Math.round(correct*1000/attempted)/10:0,difficult,starred,weak};
 }
+function mathsV2Group_(chapter){const x=String(chapter||'').toLowerCase();if(/fraction pattern|triplet|calculation memory|square|cube/.test(x))return'misc';if(/percentage|profit|loss|discount|ratio|proportion|average|mixture|alligation|interest|time.*work|pipe|cistern|speed|distance|train|boat|stream|partnership|ages|work.*wage/.test(x))return'arithmetic';return'advanced';}
 
 function getMathsProgressV2(){
   ensureMathsV2_();const qs=standardStudyQuestions_(getAllQuestions_()).filter(active_),state=getStateMap_(),byChapter={};qs.forEach(q=>{const c=String(q.chapter||'Other');(byChapter[c]||(byChapter[c]=[])).push(q)});
   const chapters=Object.keys(byChapter).sort().map(c=>({chapter:c,metric:mathsProgressMetricV2_(byChapter[c],state),concepts:mathsProgressMetricV2_(byChapter[c].filter(q=>normalizeLabel_(q.topic)==='concepts'),state),questions:mathsProgressMetricV2_(byChapter[c].filter(q=>normalizeLabel_(q.topic)==='questions'),state)}));
-  const advanced=qs.filter(q=>!/percentage|profit|loss|discount|ratio|proportion|average|mixture|alligation|interest|time.*work|pipe|cistern|speed|distance|train|boat|stream|partnership|ages|work.*wage/i.test(String(q.chapter||''))),arithmetic=qs.filter(q=>!advanced.includes(q));
+  const advanced=qs.filter(q=>mathsV2Group_(q.chapter)==='advanced'),arithmetic=qs.filter(q=>mathsV2Group_(q.chapter)==='arithmetic');
   return {generatedAt:new Date().toISOString(),overall:mathsProgressMetricV2_(qs,state),advanced:mathsProgressMetricV2_(advanced,state),arithmetic:mathsProgressMetricV2_(arithmetic,state),chapters};
 }
 
