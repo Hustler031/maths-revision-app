@@ -1,1 +1,1 @@
-function completePracticeUiPatch_(){return HtmlService.createHtmlOutputFromFile('MathsV3UI').getContent();}
+function completePracticeUiPatch_(){return HtmlService.createHtmlOutputFromFile('MathsV3UI').getContent()+HtmlService.createHtmlOutputFromFile('MathsV3Compat').getContent();}
