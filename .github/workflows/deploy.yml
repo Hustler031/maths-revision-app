@@ -30,7 +30,7 @@ jobs:
         run: |
           python - <<'PY'
           import re, pathlib, sys
-          for name in ('MathsV3UI.html','MathsV3Compat.html','MathsV4UI.html'):
+          for name in ('MathsV3UI.html','MathsV3Compat.html','MathsV4UI.html','MathsV5UI.html'):
               text=pathlib.Path(name).read_text(encoding='utf-8')
               blocks=re.findall(r'<script>([\s\S]*?)</script>', text)
               if not blocks: sys.exit(f'{name} script block missing')
@@ -39,29 +39,31 @@ jobs:
           node --check /tmp/MathsV3UI.html.js
           node --check /tmp/MathsV3Compat.html.js
           node --check /tmp/MathsV4UI.html.js
+          node --check /tmp/MathsV5UI.html.js
       - name: Validate runtime contracts
         shell: bash
         run: |
           set -e
           SERVER="$(cat *.gs)"
-          FRONTEND="$(cat Index.html MathsV3UI.html MathsV3Compat.html MathsV4UI.html)"
-          for token in startMathsV3Quiz getMathsV3Bootstrap toggleImportantV3 toggleDifficultV3 getSessionAttemptMapV3 saveSessionPositionV3 getMathsScopeMetricV4 getMathsNewHubV4 getMathsProgressV4 getStarredRevisionV4 startMathsV4Quiz getConceptsHubV4 saveConceptV4 getMathsViewItemsV4; do
+          FRONTEND="$(cat Index.html MathsV3UI.html MathsV3Compat.html MathsV4UI.html MathsV5UI.html)"
+          for token in startMathsV3Quiz getMathsV3Bootstrap toggleImportantV3 toggleDifficultV3 getSessionAttemptMapV3 saveSessionPositionV3 getMathsScopeMetricV4 getMathsNewHubV4 getMathsProgressV4 getStarredRevisionV4 startMathsV4Quiz getConceptsHubV4 saveConceptV4 getMathsViewItemsV4 getMathsScopeMetricV5 startMathsV5Quiz; do
             [[ "$SERVER" == *"$token"* ]] || { echo "Missing backend contract: $token"; exit 1; }
           done
-          for token in openChapterHub openTopicHub openStudyGroup openGlobalNewV3 openStarredRevisionV3 openConceptsV4 openQuestionJump renderQuestion "Coverage" "Wrong" "Difficult" "Starred" "Practice All" "View All" "Concept" "data-v4=\"new\"" "data-v4=\"weak\"" "data-v4=\"random\""; do
+          for token in openChapterHub openTopicHub openStudyGroup openGlobalNewV3 openStarredRevisionV3 openConceptsV4 openQuestionJump renderQuestion "Coverage" "Wrong" "Difficult" "Starred" "Practice All" "View All" "Concept" "Timer" "🚒 Difficult"; do
             [[ "$FRONTEND" == *"$token"* ]] || { echo "Missing frontend contract: $token"; exit 1; }
           done
           grep -q "HtmlService.createHtmlOutputFromFile('MathsV3UI')" CompletePracticeUI.gs || exit 1
           grep -q "HtmlService.createHtmlOutputFromFile('MathsV3Compat')" CompletePracticeUI.gs || exit 1
-          grep -q "HtmlService.createHtmlOutputFromFile('MathsV4UI')" CompletePracticeUI.gs || { echo 'V4 optimization layer is not wired.'; exit 1; }
+          grep -q "HtmlService.createHtmlOutputFromFile('MathsV4UI')" CompletePracticeUI.gs || exit 1
+          grep -q "HtmlService.createHtmlOutputFromFile('MathsV5UI')" CompletePracticeUI.gs || { echo 'V5 stability layer is not wired.'; exit 1; }
           grep -q "function demandUiPatch_(){return '';" DemandUI.gs || exit 1
           grep -q "function chapterGroupsUiPatch_(){return '';" ChapterGroupsUI.gs || exit 1
           grep -q 'viewport-fit=cover' Index.html || exit 1
           grep -q 'width:min(820px,100%)' Index.html || exit 1
           grep -q '"access": "ANYONE"' appsscript.json || exit 1
           grep -q '"executeAs": "USER_DEPLOYING"' appsscript.json || exit 1
-          if grep -q 'MutationObserver' MathsV3UI.html MathsV3Compat.html MathsV4UI.html; then echo 'MutationObserver forbidden.'; exit 1; fi
-          if grep -q 'document.body.scrollHeight' Index.html MathsV3UI.html MathsV3Compat.html MathsV4UI.html; then echo 'Answer auto-scroll regression.'; exit 1; fi
+          if grep -q 'MutationObserver' MathsV3UI.html MathsV3Compat.html MathsV4UI.html MathsV5UI.html; then echo 'MutationObserver forbidden.'; exit 1; fi
+          if grep -q 'document.body.scrollHeight' Index.html MathsV3UI.html MathsV3Compat.html MathsV4UI.html MathsV5UI.html; then echo 'Answer auto-scroll regression.'; exit 1; fi
 
   deploy:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
