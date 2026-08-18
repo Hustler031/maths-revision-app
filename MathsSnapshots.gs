@@ -1,4 +1,5 @@
 const MATHS_SNAPSHOT_TTL_SEC = 3600;
+const MATHS_HUB_CACHE_SEC = 300;
 
 function mathsSnapshotCache_(){ return CacheService.getScriptCache(); }
 function mathsSnapshotKey_(name){ return 'maths:snapshot:v6:'+String(name||'default'); }
@@ -29,16 +30,23 @@ function buildMathsSnapshotV6_(){
 
 function getMathsSnapshotV6(force){
   const cache=mathsSnapshotCache_(), key=mathsSnapshotKey_('progress');
-  if(!force){
-    const raw=cache.get(key); if(raw){ try{return JSON.parse(raw);}catch(e){} }
-  }
+  if(!force){ const raw=cache.get(key); if(raw){ try{return JSON.parse(raw);}catch(e){} } }
   const snap=buildMathsSnapshotV6_();
   try{ cache.put(key,JSON.stringify(snap),MATHS_SNAPSHOT_TTL_SEC); }catch(e){}
   return snap;
 }
+function getMathsNewHubV6(){
+  const snap=getMathsSnapshotV6(false);
+  return {generatedAt:snap.generatedAt,overall:snap.overall,chapters:(snap.chapters||[]).filter(x=>Number(x.metric&&x.metric.unseen||0)>0)};
+}
+function cachedHubV6_(name,builder,ttl){
+  const c=mathsSnapshotCache_(),k=mathsSnapshotKey_(name),raw=c.get(k);if(raw){try{return JSON.parse(raw)}catch(e){}}
+  const v=builder();try{c.put(k,JSON.stringify(v),ttl||MATHS_HUB_CACHE_SEC)}catch(e){}return v;
+}
+function getStarredRevisionV6(){return cachedHubV6_('starred',()=>getStarredRevisionV4(),MATHS_HUB_CACHE_SEC);}
+function getConceptsHubV6(){return cachedHubV6_('concepts',()=>getConceptsHubV4(),MATHS_HUB_CACHE_SEC);}
 function invalidateMathsSnapshotsV6(){
-  try{ mathsSnapshotCache_().remove(mathsSnapshotKey_('progress')); }catch(e){}
-  return true;
+  const c=mathsSnapshotCache_();['progress','starred','concepts'].forEach(k=>{try{c.remove(mathsSnapshotKey_(k))}catch(e){}});return true;
 }
 function getMathsScopeMetricV6(request){
   ensureMathsV3_();
@@ -49,11 +57,13 @@ function getMathsScopeMetricV6(request){
 function toggleConceptV6(questionId,sessionId){
   ensureMathsV3_(); const id=validQuestionId_(questionId), sh=ensureConceptsV4_(), rows=sheetObjects_(sh);
   const activeRows=rows.filter(r=>String(r.question_id||'').trim()===id&&(!Object.prototype.hasOwnProperty.call(r,'active')||bool_(r.active)));
-  if(activeRows.length){ activeRows.forEach(r=>sh.getRange(r.__row,7).setValue(false)); return {ok:true,questionId:id,inConcept:false}; }
-  const q=getAllQuestions_().concat(getGeneratedQuestions_()).find(x=>String(x.question_id)===id)||{};
-  sh.appendRow([id,new Date(),mathsV3Day_(),q.chapter||'',q.topic||'',String(sessionId||''),true]);
-  return {ok:true,questionId:id,inConcept:true};
+  let result;
+  if(activeRows.length){ activeRows.forEach(r=>sh.getRange(r.__row,7).setValue(false)); result={ok:true,questionId:id,inConcept:false}; }
+  else { const q=getAllQuestions_().concat(getGeneratedQuestions_()).find(x=>String(x.question_id)===id)||{};sh.appendRow([id,new Date(),mathsV3Day_(),q.chapter||'',q.topic||'',String(sessionId||''),true]);result={ok:true,questionId:id,inConcept:true}; }
+  try{mathsSnapshotCache_().remove(mathsSnapshotKey_('concepts'))}catch(e){}return result;
 }
+function toggleStarredV6(questionId,sessionId){const r=toggleImportantV3(questionId,sessionId);try{const c=mathsSnapshotCache_();c.remove(mathsSnapshotKey_('starred'));c.remove(mathsSnapshotKey_('progress'))}catch(e){}return r;}
+function toggleDifficultV6(questionId,sessionId){const r=toggleDifficultV3(questionId,sessionId);try{mathsSnapshotCache_().remove(mathsSnapshotKey_('progress'))}catch(e){}return r;}
 
 function startMathsV6Quiz(request){
   ensureMathsV3_(); request=Object.assign({},request||{});
