@@ -45,10 +45,10 @@ jobs:
           set -e
           SERVER="$(cat *.gs)"
           FRONTEND="$(cat Index.html MathsV3UI.html MathsV3Compat.html MathsV4UI.html)"
-          for token in startMathsV3Quiz getMathsV3Bootstrap toggleImportantV3 toggleDifficultV3 getSessionAttemptMapV3 saveSessionPositionV3 getMathsScopeMetricV4 getMathsNewHubV4 getMathsProgressV4 getStarredRevisionV4 startMathsV4Quiz; do
+          for token in startMathsV3Quiz getMathsV3Bootstrap toggleImportantV3 toggleDifficultV3 getSessionAttemptMapV3 saveSessionPositionV3 getMathsScopeMetricV4 getMathsNewHubV4 getMathsProgressV4 getStarredRevisionV4 startMathsV4Quiz getConceptsHubV4 saveConceptV4 getMathsViewItemsV4; do
             [[ "$SERVER" == *"$token"* ]] || { echo "Missing backend contract: $token"; exit 1; }
           done
-          for token in openChapterHub openTopicHub openStudyGroup openGlobalNewV3 openStarredRevisionV3 openQuestionJump renderQuestion "Coverage" "Wrong" "Difficult" "Starred" "Practice All" "data-v4=\"new\"" "data-v4=\"weak\"" "data-v4=\"random\""; do
+          for token in openChapterHub openTopicHub openStudyGroup openGlobalNewV3 openStarredRevisionV3 openConceptsV4 openQuestionJump renderQuestion "Coverage" "Wrong" "Difficult" "Starred" "Practice All" "View All" "Concept" "data-v4=\"new\"" "data-v4=\"weak\"" "data-v4=\"random\""; do
             [[ "$FRONTEND" == *"$token"* ]] || { echo "Missing frontend contract: $token"; exit 1; }
           done
           grep -q "HtmlService.createHtmlOutputFromFile('MathsV3UI')" CompletePracticeUI.gs || exit 1
