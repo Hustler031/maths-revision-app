@@ -1,0 +1,18 @@
+<script>
+(function(){
+  'use strict';
+  var legacyServer=window.server;
+  window.server=function(fn){
+    var args=[].slice.call(arguments,1);
+    if(fn==='saveSessionPosition'){
+      return new Promise(function(resolve,reject){
+        google.script.run
+          .withSuccessHandler(resolve)
+          .withFailureHandler(function(e){reject(new Error(e&&e.message?e.message:String(e)))})
+          .saveSessionPositionV3(args[0],args[1]);
+      });
+    }
+    return legacyServer.apply(window,[fn].concat(args));
+  };
+})();
+</script>

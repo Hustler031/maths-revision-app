@@ -40,34 +40,37 @@ jobs:
         run: |
           python - <<'PY'
           import re, pathlib, sys
-          text=pathlib.Path('MathsV3UI.html').read_text(encoding='utf-8')
-          m=re.search(r'<script>([\s\S]*?)</script>', text)
-          if not m:
-              sys.exit('MathsV3UI.html script block missing')
-          pathlib.Path('/tmp/maths-v3-ui.js').write_text(m.group(1), encoding='utf-8')
+          for name in ('MathsV3UI.html','MathsV3Compat.html'):
+              text=pathlib.Path(name).read_text(encoding='utf-8')
+              blocks=re.findall(r'<script>([\s\S]*?)</script>', text)
+              if not blocks:
+                  sys.exit(f'{name} script block missing')
+              pathlib.Path('/tmp/'+name+'.js').write_text('\n'.join(blocks),encoding='utf-8')
           PY
-          node --check /tmp/maths-v3-ui.js
+          node --check /tmp/MathsV3UI.html.js
+          node --check /tmp/MathsV3Compat.html.js
       - name: Validate runtime contracts
         shell: bash
         run: |
           set -e
           SERVER="$(cat *.gs)"
-          FRONTEND="$(cat Index.html MathsV3UI.html)"
-          for token in startMathsV3Quiz getMathsV3Bootstrap getMathsProgressV3 getStarredRevisionV3 getMathsV3ResumeInfo resumeMathsV3Session toggleImportantV3 toggleDifficultV3 getSessionAttemptMapV3 getScheduledPlan_ selectCalculationTraining_ getDemandSets_; do
+          FRONTEND="$(cat Index.html MathsV3UI.html MathsV3Compat.html)"
+          for token in startMathsV3Quiz getMathsV3Bootstrap getMathsProgressV3 getStarredRevisionV3 getMathsV3ResumeInfo resumeMathsV3Session toggleImportantV3 toggleDifficultV3 getSessionAttemptMapV3 saveSessionPositionV3 getScheduledPlan_ selectCalculationTraining_ getDemandSets_; do
             [[ "$SERVER" == *"$token"* ]] || { echo "Missing V3 backend contract: $token"; exit 1; }
           done
-          for token in "data-v3kind=\"random\"" "data-v3kind=\"weak\"" "data-v3kind=\"all\"" "data-v3kind=\"new\"" "data-v3kind=\"starred\"" "data-v3kind=\"difficult\"" openChapterHub openTopicHub openStudyGroup openGlobalNewV3 openStarredRevisionV3 openQuestionJump qj-correct qj-wrong qj-seen renderQuestion renderDiagram questionSizeClass toggleTheme "body.dark"; do
+          for token in "data-v3kind=\"random\"" "data-v3kind=\"weak\"" "data-v3kind=\"all\"" "data-v3kind=\"new\"" "data-v3kind=\"starred\"" "data-v3kind=\"difficult\"" openChapterHub openTopicHub openStudyGroup openGlobalNewV3 openStarredRevisionV3 openQuestionJump qj-correct qj-wrong qj-seen renderQuestion renderDiagram questionSizeClass toggleTheme "body.dark" saveSessionPosition; do
             [[ "$FRONTEND" == *"$token"* ]] || { echo "Missing V3 frontend contract: $token"; exit 1; }
           done
           grep -q "HtmlService.createHtmlOutputFromFile('MathsV3UI')" CompletePracticeUI.gs || { echo 'V3 shell is not wired into served HTML.'; exit 1; }
+          grep -q "HtmlService.createHtmlOutputFromFile('MathsV3Compat')" CompletePracticeUI.gs || { echo 'V3 compatibility bridge is not wired into served HTML.'; exit 1; }
           grep -q "function demandUiPatch_(){return '';" DemandUI.gs || { echo 'Legacy DemandUI patch still active.'; exit 1; }
           grep -q "function chapterGroupsUiPatch_(){return '';" ChapterGroupsUI.gs || { echo 'Legacy ChapterGroups patch still active.'; exit 1; }
           grep -q 'viewport-fit=cover' Index.html || { echo 'Viewport contract missing.'; exit 1; }
           grep -q 'width:min(820px,100%)' Index.html || { echo 'Mobile shell contract missing.'; exit 1; }
           grep -q '"access": "ANYONE"' appsscript.json || exit 1
           grep -q '"executeAs": "USER_DEPLOYING"' appsscript.json || exit 1
-          if grep -q 'MutationObserver' MathsV3UI.html; then echo 'MutationObserver is forbidden in V3 shell.'; exit 1; fi
-          if grep -q 'document.body.scrollHeight' Index.html MathsV3UI.html; then echo 'Answer auto-scroll regression detected.'; exit 1; fi
+          if grep -q 'MutationObserver' MathsV3UI.html MathsV3Compat.html; then echo 'MutationObserver is forbidden in V3 shell.'; exit 1; fi
+          if grep -q 'document.body.scrollHeight' Index.html MathsV3UI.html MathsV3Compat.html; then echo 'Answer auto-scroll regression detected.'; exit 1; fi
 
   deploy:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
