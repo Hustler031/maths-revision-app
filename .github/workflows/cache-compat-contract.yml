@@ -1,0 +1,66 @@
+name: Validate Cache Compatibility
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'CompletePracticeUI.gs'
+      - 'MathsMocksV10.gs'
+      - 'MathsMocksUI.html'
+      - 'MathsAcademicEligibilityV14.gs'
+      - '.github/workflows/cache-compat-contract.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'CompletePracticeUI.gs'
+      - 'MathsMocksV10.gs'
+      - 'MathsMocksUI.html'
+      - 'MathsAcademicEligibilityV14.gs'
+      - '.github/workflows/cache-compat-contract.yml'
+
+jobs:
+  cache-compatibility:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Validate Apps Script syntax
+        shell: bash
+        run: |
+          cat *.gs > /tmp/maths-server.js
+          node --check /tmp/maths-server.js
+      - name: Validate academic cache compatibility
+        shell: bash
+        run: |
+          set -e
+          F=CompletePracticeUI.gs
+          grep -Fq "CACHE_SCHEMA='academic-v14-cache1'" "$F"
+          grep -Fq "ACADEMIC_COMPAT='v14'" "$F"
+          grep -Fq "academicCacheKey" "$F"
+          grep -Fq "String(x.schema||'')!==CACHE_SCHEMA" "$F"
+          grep -Fq "String(x.compat||'')!==ACADEMIC_COMPAT" "$F"
+          grep -Fq "bootstrapCompatible" "$F"
+          grep -Fq "installBootstrapGuard" "$F"
+          grep -Fq "instant=!!(bc&&bc.stale&&hc&&hc.stale)" "$F"
+          grep -Fq "if(instant){if(typeof loading==='function')loading(false)" "$F"
+          if grep -Fq "const startupReveal" "$F"; then echo 'Unsafe unconditional startup reveal reintroduced'; exit 1; fi
+          grep -Fq "const MATHS_ACADEMIC_ELIGIBILITY_VERSION='v14'" MathsAcademicEligibilityV14.gs
+      - name: Validate isolated mock cache
+        shell: bash
+        run: |
+          set -e
+          F=CompletePracticeUI.gs
+          M=MathsMocksV10.gs
+          grep -Fq "SCHEMA='mocks-v10-cache1'" "$F"
+          grep -Fq "MOCK_SCHEMA='mocks-v10'" "$F"
+          grep -Fq "validHubData" "$F"
+          grep -Fq "String(d.setId||'')==='MOCK_QUESTIONS'" "$F"
+          grep -Fq "readChapterCache" "$F"
+          grep -Fq "saveChapterCache" "$F"
+          grep -Fq "prefetchMathsMocksV10" "$F"
+          grep -Fq "const MATHS_MOCK_SCHEMA_V10='mocks-v10'" "$M"
+          grep -Fq "mockSchema:MATHS_MOCK_SCHEMA_V10" "$M"
+          grep -Fq "const MATHS_MOCK_SET_ID_V10='MOCK_QUESTIONS'" "$M"
+          if grep -Fq "SCHEMA='academic-v14-cache1',MOCK_SCHEMA" "$F"; then echo 'Mock and academic cache schemas were coupled'; exit 1; fi
