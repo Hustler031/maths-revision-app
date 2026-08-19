@@ -1,0 +1,30 @@
+name: Apply route persistence patch
+
+on:
+  push:
+    branches: [agent/restore-current-screen]
+    paths:
+      - '.automation/route.patch'
+      - '.github/workflows/apply-route-patch.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/restore-current-screen
+      - name: Apply isolated route patch
+        shell: bash
+        run: |
+          set -e
+          git apply --check .automation/route.patch
+          git apply .automation/route.patch
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add CompletePracticeUI.gs
+          git commit -m "Restore current screen after reload"
+          git push origin HEAD:agent/restore-current-screen
