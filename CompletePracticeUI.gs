@@ -1,7 +1,11 @@
 // Active served UI: one quiz layer + one application layer + isolated analytical Mocks module.
-// Chapter visibility comes from the authoritative Questions bank. Demand-set membership
-// (including MOCK_QUESTIONS) must never decide whether an academic chapter exists.
+// Main chapter visibility is server-owned by getAppBootstrapV11(): mock/calculation collection rows
+// retain their academic Chapter for analytics but cannot create Advanced/Arithmetic chapter cards.
 function completePracticeUiPatch_(){
   ensureMathsProgressSnapshotV10_();
-  return HtmlService.createHtmlOutputFromFile('MathsQuizUI').getContent()+HtmlService.createHtmlOutputFromFile('MathsAppUI').getContent()+HtmlService.createHtmlOutputFromFile('MathsMocksUI').getContent();
+  const quizUi=HtmlService.createHtmlOutputFromFile('MathsQuizUI').getContent();
+  const appUi=HtmlService.createHtmlOutputFromFile('MathsAppUI').getContent()
+    .replace('r.getAppBootstrapV9()','r.getAppBootstrapV11()');
+  const mocksUi=HtmlService.createHtmlOutputFromFile('MathsMocksUI').getContent();
+  return quizUi+appUi+mocksUi;
 }
