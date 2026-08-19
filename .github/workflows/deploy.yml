@@ -68,7 +68,7 @@ jobs:
           grep -q '\.dock-nav' MathsQuizUI.html || { echo 'Quiz nav selector contract missing'; exit 1; }
           if grep -qE '\.quiz-tools|\.quiz-nav' MathsQuizUI.html MathsAppUI.html; then echo 'Wrong English-only quiz selector leaked into Maths runtime'; exit 1; fi
           grep -q "MATHS_DATA_VERSION" MathsCore.gs || { echo 'Monotonic cache version missing'; exit 1; }
-          grep -q "DIFFICULT.*ON\|IMPORTANT.*ON\|\['IMPORTANT','DIFFICULT'\]" MathsCore.gs || { echo 'Unified revision membership missing'; exit 1; }
+          grep -q "\['IMPORTANT','DIFFICULT'\]" MathsCore.gs || { echo 'Unified revision membership missing'; exit 1; }
       - name: Build served-page smoke fixture
         shell: bash
         run: |
@@ -78,10 +78,9 @@ jobs:
           quiz=Path('MathsQuizUI.html').read_text(encoding='utf-8')
           app=Path('MathsAppUI.html').read_text(encoding='utf-8')
           served=idx.replace('</body>',quiz+app+'</body>')
-          required=['id="main"','id="nav"','MathsAppUI','dock-tools','openQuestionJump','getAppBootstrapV9']
+          required=['id="main"','id="nav"','maths-app-v9','dock-tools','openQuestionJump','getAppBootstrapV9']
           for token in required:
               if token not in served: raise SystemExit('Served page missing '+token)
-          if served.find('MathsQuizUI')!=-1: pass
           Path('/tmp/served.html').write_text(served,encoding='utf-8')
           print('served fixture bytes',len(served.encode()))
           PY
