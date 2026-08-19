@@ -1,0 +1,92 @@
+<style>
+/* Final shell polish: single top strip, compact actions, semantic minimal colours. */
+.v7-strip{display:grid!important;grid-template-columns:1.12fr repeat(3,minmax(0,1fr))!important;gap:5px!important;margin:0!important;width:100%!important}
+.v7-strip span{padding:8px 5px!important;border-radius:999px!important;background:transparent!important;border:1px solid var(--line)!important;color:var(--text)!important;font-size:11px!important;font-weight:850!important;line-height:1!important;white-space:nowrap!important;text-align:center!important}
+.v7-strip .coverage{color:#9aa9ff!important;border-color:color-mix(in srgb,#8396ff 38%,var(--line))!important;background:color-mix(in srgb,#8396ff 8%,transparent)!important}
+.v7-strip .wrong{color:#ff7f87!important;border-color:color-mix(in srgb,#ef5b64 42%,var(--line))!important;background:color-mix(in srgb,#ef5b64 8%,transparent)!important}
+.v7-strip .difficult{color:#b39aff!important;border-color:color-mix(in srgb,#9b7cff 42%,var(--line))!important;background:color-mix(in srgb,#9b7cff 8%,transparent)!important}
+.v7-strip .starred{color:#e9bd62!important;border-color:color-mix(in srgb,#e6ad3f 40%,var(--line))!important;background:color-mix(in srgb,#e6ad3f 8%,transparent)!important}
+.maths-top-strip{margin:10px 0 12px!important;padding:0 4px!important}
+.v7-actions,.v6-actions,.v4-actions,.v3-actions{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:7px!important}
+.v7-actions .btn,.v6-actions .btn,.v4-actions .btn,.v3-actions .btn{min-height:40px!important;padding:7px 5px!important;font-size:10.5px!important;background:color-mix(in srgb,var(--primary) 8%,var(--card))!important;border-color:color-mix(in srgb,var(--primary) 22%,var(--line))!important;color:var(--primary)!important;box-shadow:none!important}
+.metric-wrong{color:#ff7f87!important}.metric-difficult{color:#b39aff!important}.metric-starred{color:#e9bd62!important}
+.v7-star-hero{background:color-mix(in srgb,#e6ad3f 7%,var(--card))!important;border-color:color-mix(in srgb,#e6ad3f 28%,var(--line))!important;box-shadow:none!important}
+.v7-progress-overview>div{background:var(--card)!important;box-shadow:none!important}.v7-progress-overview>div:nth-child(3){border-color:color-mix(in srgb,#ef5b64 34%,var(--line))!important}.v7-progress-overview>div:nth-child(4){border-color:color-mix(in srgb,#9b7cff 34%,var(--line))!important}.v7-progress-overview>div:nth-child(5){border-color:color-mix(in srgb,#e6ad3f 34%,var(--line))!important}
+.v7-progress-overview>div:nth-child(3) b{color:#ff7f87!important}.v7-progress-overview>div:nth-child(4) b{color:#b39aff!important}.v7-progress-overview>div:nth-child(5) b{color:#e9bd62!important}
+@media(max-width:390px){.v7-strip{gap:3px!important}.v7-strip span{font-size:9.7px!important;padding:7px 3px!important}.v7-actions .btn,.v6-actions .btn,.v4-actions .btn,.v3-actions .btn{font-size:9.8px!important}}
+</style>
+<script>
+(function(){
+'use strict';
+var routeLock=0;
+function q(s,r){return (r||document).querySelector(s)}
+function qa(s,r){return Array.from((r||document).querySelectorAll(s))}
+function isHome(){return window.app&&app.view==='home'}
+function routeFromTarget(target){
+  if(!isHome())return '';
+  var el=target&&target.closest&&target.closest('button,[role="button"],.v3-card,.v4-card,.v7-card,.home-card,.list-card,.v3-click');
+  if(!el)return '';
+  var text=String(el.textContent||'').replace(/\s+/g,' ').trim().toLowerCase();
+  var oc=String(el.getAttribute&&el.getAttribute('onclick')||'').toLowerCase();
+  if(text.indexOf('starred revision')>=0||oc.indexOf('openstarredrevision')>=0)return 'starred';
+  if(text.indexOf('new practice')>=0||oc.indexOf('openglobalnew')>=0)return 'new';
+  return '';
+}
+function hardRoute(kind,e){
+  var now=Date.now();
+  if(now-routeLock<450){if(e){e.preventDefault();e.stopImmediatePropagation()}return true}
+  routeLock=now;
+  if(e){e.preventDefault();e.stopImmediatePropagation()}
+  if(kind==='new'&&typeof window.openGlobalNewV3==='function'){window.openGlobalNewV3();return true}
+  if(kind==='starred'&&typeof window.openStarredRevisionV3==='function'){window.openStarredRevisionV3();return true}
+  return false;
+}
+function captureRoute(e){var k=routeFromTarget(e.target);if(k)hardRoute(k,e)}
+document.addEventListener('pointerup',captureRoute,true);
+document.addEventListener('click',function(e){var k=routeFromTarget(e.target);if(k)hardRoute(k,e)},true);
+
+function stripScore(el){var t=String(el&&el.textContent||'');var n=(t.match(/\d+(?:\.\d+)?/g)||[]).map(Number);return n.reduce(function(a,b){return a+b},0)}
+function normalizeTopStrip(root){
+  root=root||q('#main .content');if(!root)return;
+  var strips=qa('.v7-page-strip,.v7-strip,.v6-strip,.v5-scope-strip,.v4-strip-wrap',root).filter(function(x){return !x.closest('.v7-progress-overview')});
+  if(!strips.length)return;
+  var candidates=strips.filter(function(x){return x.classList.contains('v7-page-strip')||x.classList.contains('v7-strip')});
+  var keep=(candidates.length?candidates:strips).sort(function(a,b){return stripScore(b)-stripScore(a)})[0];
+  if(!keep)return;
+  var shell=keep.classList.contains('v7-page-strip')?keep:keep.parentElement;
+  if(!shell||shell===root||!shell.contains(keep)){shell=document.createElement('div');shell.appendChild(keep)}
+  shell.classList.add('maths-top-strip');shell.classList.remove('v7-page-strip');
+  strips.forEach(function(x){if(x!==keep&&!x.contains(keep)){var p=x.parentElement;x.remove();if(p&&p!==root&&!p.children.length)p.remove()}});
+  if(shell.parentElement!==root)root.insertBefore(shell,root.firstChild);else if(root.firstChild!==shell)root.insertBefore(shell,root.firstChild);
+}
+function actionGridSelector(){return '.v7-actions,.v6-actions,.v4-actions,.v3-actions'}
+function normalizeActions(root){
+  root=root||q('#main .content');if(!root||window.app&&app.view==='starred')return;
+  var grids=qa(actionGridSelector(),root).filter(function(g){return !g.closest('#modal')&&!g.closest('.v7-history-body')});
+  if(grids.length<=1)return;
+  var keep=grids[grids.length-1];
+  grids.slice(0,-1).forEach(function(g){var p=g.parentElement;g.remove();if(p&&p!==root&&(!String(p.textContent||'').trim())&&p.children.length===0)p.remove()});
+  if(keep&&keep.parentElement){keep.parentElement.classList.add('maths-single-actions')}
+}
+function semanticize(root){
+  root=root||q('#main');if(!root)return;
+  qa('.v7-chapter-line,.v7-summary,.v6-line',root).forEach(function(el){
+    if(el.dataset.semantic==='1')return;
+    var h=el.innerHTML;
+    h=h.replace(/(\d+\s+wrong)/gi,'<span class="metric-wrong">$1</span>');
+    h=h.replace(/(✕\s*Wrong(?:\s*<b>[^<]*<\/b>)?)/gi,'<span class="metric-wrong">$1</span>');
+    h=h.replace(/(◆\s*(?:Difficult\s*)?(?:<b>[^<]*<\/b>|\d+))/gi,'<span class="metric-difficult">$1</span>');
+    h=h.replace(/(☆\s*(?:Starred\s*)?(?:<b>[^<]*<\/b>|\d+))/gi,'<span class="metric-starred">$1</span>');
+    el.innerHTML=h;el.dataset.semantic='1';
+  })
+}
+function normalizeCurrent(){var root=q('#main .content');if(!root)return;normalizeTopStrip(root);normalizeActions(root);semanticize(root)}
+function scheduleNormalize(){[0,30,120,350,900].forEach(function(ms){setTimeout(normalizeCurrent,ms)})}
+['openChapterHub','openTopicHub','openStudyGroup','startDemandSet','openCalculationHub','openGlobalNewV3','openStarredRevisionV3','openConceptsV4','progress'].forEach(function(name){
+  var fn=window[name];if(typeof fn!=='function'||fn.__mathsShellWrapped)return;
+  var wrapped=function(){var r=fn.apply(this,arguments);scheduleNormalize();return r};wrapped.__mathsShellWrapped=true;window[name]=wrapped;
+});
+document.addEventListener('DOMContentLoaded',scheduleNormalize);
+setTimeout(scheduleNormalize,0);
+})();
+</script>
