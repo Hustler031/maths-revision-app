@@ -8,7 +8,7 @@ function mathsPct_(n,d){ return d ? Math.round(Number(n||0)*1000/Number(d))/10 :
 /*
  * Lightweight data version used to keep a one-hour server snapshot fast while
  * still detecting question/state changes immediately on the next background
- * refresh.  Only structural/performance columns are hashed; quiz questions are
+ * refresh. Only structural/performance columns are hashed; quiz questions are
  * always loaded from the authoritative sheets when a session is created.
  */
 function mathsVersionRowsV8_(sheet, wanted){
@@ -28,10 +28,12 @@ function mathsBankVersionV8_(){
   const s=getSheet_(MATHS.SHEETS.STATE);
   const g=getSheet_(MATHS.SHEETS.GENERATED);
   const d=getSheet_(MATHS.SHEETS.DEMAND_SETS);
+  const c=ensureConceptsV4_();
   parts.push(mathsVersionRowsV8_(q,['question_id','chapter','topic','subtopic','card_type','active','created_at','date_added']));
   parts.push(mathsVersionRowsV8_(s,['question_id','attempts','last_result','marked','important','difficult','mastered']));
   parts.push(mathsVersionRowsV8_(g,['question_id','chapter','topic','subtopic','active','created_at','date_added']));
   parts.push(mathsVersionRowsV8_(d,['set_id','question_ids_json','status']));
+  parts.push(mathsVersionRowsV8_(c,['question_id','added_at','study_day','chapter','topic','session_id','active']));
   const bytes=Utilities.computeDigest(Utilities.DigestAlgorithm.MD5,JSON.stringify(parts));
   return Utilities.base64EncodeWebSafe(bytes).replace(/=+$/,'').slice(0,18);
 }
