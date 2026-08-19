@@ -1,3 +1,14 @@
+<style>
+/* Final active interaction polish. Keep this in the authoritative last-loaded module. */
+.mf-quick-card>span:nth-child(2){display:block;min-width:0;overflow:hidden}
+.mf-quick-title,.mf-quick-sub{display:block!important;max-width:100%;white-space:normal!important;overflow-wrap:anywhere}
+.mf-quick-title{margin:0 0 4px!important}.mf-quick-sub{margin:0!important}
+.quiz-dock{bottom:12px!important;width:min(800px,calc(100% - 20px))!important;border:1px solid var(--line)!important;border-radius:16px!important;padding:7px 8px calc(7px + env(safe-area-inset-bottom))!important;box-shadow:0 8px 26px rgba(0,0,0,.18)}
+.quiz-wrap{padding-bottom:170px!important}
+.loading{flex-direction:column!important;gap:14px!important}
+.loading:after{content:attr(data-label);display:block;min-height:20px;color:var(--muted);font-size:14px;font-weight:800;letter-spacing:.01em}
+@media(max-width:390px){.mf-quick-card{grid-template-columns:44px minmax(0,1fr) 18px!important;gap:10px!important;padding:13px!important}.mf-quick-title{font-size:17px!important}.mf-quick-sub{font-size:12px!important;line-height:1.35!important}.quiz-dock{width:calc(100% - 16px)!important;bottom:12px!important}.quiz-wrap{padding-bottom:174px!important}}
+</style>
 <script>
 (function(){
 'use strict';
@@ -7,6 +18,8 @@
    without creating a second state object. */
 try{ if(typeof app!=='undefined') window.app=app; }catch(e){}
 var lastNav={view:'',at:0};
+var lastQuick={key:'',at:0};
+var pendingLoadLabel='Loading quiz…';
 function route(view){
   view=String(view||'home');
   if(typeof app==='undefined')return;
@@ -23,6 +36,20 @@ window.showView=route;
 function navButton(target){return target&&target.closest?target.closest('#nav button[data-view]'):null}
 document.addEventListener('pointerup',function(e){var b=navButton(e.target);if(!b)return;var v=String(b.dataset.view||'home');lastNav={view:v,at:Date.now()};e.preventDefault();e.stopImmediatePropagation();route(v)},true);
 document.addEventListener('click',function(e){var b=navButton(e.target);if(!b)return;var v=String(b.dataset.view||'home');if(lastNav.view===v&&Date.now()-lastNav.at<700){e.preventDefault();e.stopImmediatePropagation();return}e.preventDefault();e.stopImmediatePropagation();route(v)},true);
+
+/* Home quick-start cards use delegated routing so cached Home replacement cannot leave
+   stale element handlers behind. */
+function quickRoute(target){if(!target||!target.closest||typeof app==='undefined'||app.view!=='home')return null;var card=target.closest('#mfNew,#mfStar,#mfConcept');if(!card)return null;if(card.id==='mfNew')return {key:'new',fn:'openGlobalNewV3'};if(card.id==='mfStar')return {key:'star',fn:'openStarredRevisionV3'};return {key:'concept',fn:'openConceptsV4'}}
+document.addEventListener('pointerup',function(e){var r=quickRoute(e.target);if(!r)return;lastQuick={key:r.key,at:Date.now()};e.preventDefault();e.stopImmediatePropagation();var fn=window[r.fn];if(typeof fn==='function')fn()},true);
+document.addEventListener('click',function(e){var r=quickRoute(e.target);if(!r)return;if(lastQuick.key===r.key&&Date.now()-lastQuick.at<700){e.preventDefault();e.stopImmediatePropagation()}},true);
+
+/* Give the full-screen loader useful context. The practice-mode tap stores the label;
+   the subsequent count tap keeps it until the quiz request actually starts. */
+function loadLabelFrom(target){if(!target||!target.closest)return '';var b=target.closest('button,[data-mf-action],#mfDaily,#mfResume');if(!b)return '';if(b.id==='mfDaily')return 'Loading today’s practice…';if(b.id==='mfResume')return 'Loading saved practice…';var t=String(b.textContent||'').replace(/\s+/g,' ').trim();if(/difficult/i.test(t))return 'Loading difficult practice…';if(/random/i.test(t))return 'Loading random practice…';if(/weak/i.test(t))return 'Loading weak practice…';if(/star/i.test(t))return 'Loading starred practice…';if(/new/i.test(t))return 'Loading new practice…';if(/practice all/i.test(t))return 'Loading Practice All…';if(/continue|resume/i.test(t))return 'Loading saved practice…';return ''}
+document.addEventListener('pointerdown',function(e){var label=loadLabelFrom(e.target);if(label)pendingLoadLabel=label},true);
+var baseLoading=window.loading;
+if(typeof baseLoading==='function')window.loading=function(on){var box=document.getElementById('loading');if(on&&box)box.setAttribute('data-label',pendingLoadLabel||'Loading quiz…');var out=baseLoading.apply(this,arguments);if(!on){pendingLoadLabel='Loading quiz…';if(box)box.removeAttribute('data-label')}return out};
+
 /* Final boot: after every injected module has executed, render the authoritative
    cached-first Home once. This also recovers from the legacy init callback racing
    with module injection. */
