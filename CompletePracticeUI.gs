@@ -44,7 +44,8 @@ function completePracticeUiPatch_(){
     .replace(oldStart,newStart);
 
   if(!appUi.includes('getAppBootstrapV14')||!appUi.includes('getMathsHomeV14')||!appUi.includes('getMathsSnapshotV14')||!appUi.includes('getMathsNewHubV14')||!appUi.includes('getMathsScopeMetricV14')||!appUi.includes('startMathsPracticeV14')||!appUi.includes('getMathsViewItemsV14'))throw new Error('Maths academic eligibility route replacement failed');
-  if(!appUi.includes("CACHE_SCHEMA='academic-v14-cache1'")||!appUi.includes('academicCacheKey')||!appUi.includes('installBootstrapGuard')||!appUi.includes('refreshHomeSilent')||!appUi.includes('reconcileCaches')||appUi.includes("Promise.allSettled([call('snapshot')"))throw new Error('Maths cache compatibility orchestration replacement failed');
+  if(!appUi.includes('refreshHomeSilent')||!appUi.includes('reconcileCaches')||appUi.includes("Promise.allSettled([call('snapshot')"))throw new Error('Maths cache orchestration replacement failed');
+  if(!appUi.includes("CACHE_SCHEMA='academic-v14-cache1'")||!appUi.includes('academicCacheKey')||!appUi.includes('installBootstrapGuard'))throw new Error('Maths cache compatibility replacement failed');
 
   // Keep Mocks isolated, but make its lightweight hub and chapter reads cache-aware.
   const oldMockDecl="var KEY='maths-mocks-v10:hub',FRESH=5*60*1000,hub=null,currentChapter='',questions=[];";
