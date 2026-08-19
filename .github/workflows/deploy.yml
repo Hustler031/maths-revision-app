@@ -30,20 +30,20 @@ jobs:
         run: |
           python - <<'PY'
           import re, pathlib, sys
-          names=('MathsV3UI.html','MathsV3Compat.html','MathsFinalUI.html','MathsRouterUI.html')
+          names=('MathsV3UI.html','MathsV3Compat.html','MathsQuizUI.html','MathsFinalUI.html','MathsRouterUI.html')
           for name in names:
               text=pathlib.Path(name).read_text(encoding='utf-8')
               blocks=re.findall(r'<script>([\s\S]*?)</script>', text)
               if not blocks: sys.exit(f'{name} script block missing')
               pathlib.Path('/tmp/'+name+'.js').write_text('\n'.join(blocks),encoding='utf-8')
           PY
-          for f in /tmp/MathsV3UI.html.js /tmp/MathsV3Compat.html.js /tmp/MathsFinalUI.html.js /tmp/MathsRouterUI.html.js; do node --check "$f"; done
+          for f in /tmp/MathsV3UI.html.js /tmp/MathsV3Compat.html.js /tmp/MathsQuizUI.html.js /tmp/MathsFinalUI.html.js /tmp/MathsRouterUI.html.js; do node --check "$f"; done
       - name: Validate runtime contracts
         shell: bash
         run: |
           set -e
           SERVER="$(cat *.gs)"
-          FRONTEND="$(cat Index.html MathsV3UI.html MathsV3Compat.html MathsFinalUI.html MathsRouterUI.html)"
+          FRONTEND="$(cat Index.html MathsV3UI.html MathsV3Compat.html MathsQuizUI.html MathsFinalUI.html MathsRouterUI.html)"
           for token in startMathsV6Quiz getMathsSnapshotV8 getMathsHomeV8 getMathsNewHubV8 getStarredRevisionV6 getConceptsHubV6 getMathsScopeMetricV6 getMathsCacheVersionV8 toggleConceptV6 toggleStarredV6 toggleDifficultV6; do
             [[ "$SERVER" == *"$token"* ]] || { echo "Missing backend contract: $token"; exit 1; }
           done
@@ -52,6 +52,7 @@ jobs:
           done
           grep -q "HtmlService.createHtmlOutputFromFile('MathsV3UI')" CompletePracticeUI.gs || exit 1
           grep -q "HtmlService.createHtmlOutputFromFile('MathsV3Compat')" CompletePracticeUI.gs || exit 1
+          grep -q "HtmlService.createHtmlOutputFromFile('MathsQuizUI')" CompletePracticeUI.gs || exit 1
           grep -q "HtmlService.createHtmlOutputFromFile('MathsFinalUI')" CompletePracticeUI.gs || exit 1
           grep -q "HtmlService.createHtmlOutputFromFile('MathsRouterUI')" CompletePracticeUI.gs || exit 1
           for obsolete in MathsV4UI MathsV5UI MathsV6UI MathsV7UI MathsV7Bootstrap MathsShellUI MathsAuditFixUI; do
@@ -63,8 +64,8 @@ jobs:
           grep -q 'width:min(820px,100%)' Index.html || exit 1
           grep -q '"access": "ANYONE"' appsscript.json || exit 1
           grep -q '"executeAs": "USER_DEPLOYING"' appsscript.json || exit 1
-          if grep -q 'MutationObserver' MathsV3UI.html MathsV3Compat.html MathsFinalUI.html MathsRouterUI.html; then echo 'MutationObserver forbidden.'; exit 1; fi
-          if grep -q 'document.body.scrollHeight' Index.html MathsV3UI.html MathsV3Compat.html MathsFinalUI.html MathsRouterUI.html; then echo 'Answer auto-scroll regression.'; exit 1; fi
+          if grep -q 'MutationObserver' MathsV3UI.html MathsV3Compat.html MathsQuizUI.html MathsFinalUI.html MathsRouterUI.html; then echo 'MutationObserver forbidden.'; exit 1; fi
+          if grep -q 'document.body.scrollHeight' Index.html MathsV3UI.html MathsV3Compat.html MathsQuizUI.html MathsFinalUI.html MathsRouterUI.html; then echo 'Answer auto-scroll regression.'; exit 1; fi
 
   deploy:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
