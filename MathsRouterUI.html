@@ -3,19 +3,24 @@
 .mf-quick-card>span:nth-child(2){display:block;min-width:0;overflow:hidden}
 .mf-quick-title,.mf-quick-sub{display:block!important;max-width:100%;white-space:normal!important;overflow-wrap:anywhere}
 .mf-quick-title{margin:0 0 4px!important}.mf-quick-sub{margin:0!important}
-.quiz-dock{bottom:12px!important;width:min(800px,calc(100% - 20px))!important;border:1px solid var(--line)!important;border-radius:16px!important;padding:7px 8px calc(7px + env(safe-area-inset-bottom))!important;box-shadow:0 8px 26px rgba(0,0,0,.18)}
-.quiz-wrap{padding-bottom:170px!important}
+/* Match the English quiz control shell: edge-to-edge, compact, stable two-row layout. */
+.quiz-dock{bottom:0!important;left:50%!important;transform:translateX(-50%)!important;width:min(820px,100%)!important;border:0!important;border-top:1px solid var(--line)!important;border-radius:0!important;padding:8px 10px max(18px,calc(8px + env(safe-area-inset-bottom)))!important;box-shadow:none!important;background:color-mix(in srgb,var(--card) 96%,transparent)!important;backdrop-filter:blur(12px)!important;display:grid!important;gap:6px!important}
+.quiz-tools{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:8px!important}
+.quiz-tools .btn{min-width:0!important;min-height:48px!important;padding:8px 4px!important;font-size:13px!important}
+.quiz-nav{display:grid!important;grid-template-columns:1fr 1fr!important;gap:6px!important}
+.quiz-nav .btn{min-width:0!important;min-height:52px!important;padding:9px 6px!important;font-size:16px!important}
+.quiz-wrap{padding-bottom:188px!important}
+#mathsTimerBtn,.maths-timer-btn,[data-maths-timer]{display:none!important}
 .loading{flex-direction:column!important;gap:14px!important}
 .loading:after{content:attr(data-label);display:block;min-height:20px;color:var(--muted);font-size:14px;font-weight:800;letter-spacing:.01em}
-@media(max-width:390px){.mf-quick-card{grid-template-columns:44px minmax(0,1fr) 18px!important;gap:10px!important;padding:13px!important}.mf-quick-title{font-size:17px!important}.mf-quick-sub{font-size:12px!important;line-height:1.35!important}.quiz-dock{width:calc(100% - 16px)!important;bottom:12px!important}.quiz-wrap{padding-bottom:174px!important}}
+@media(max-width:390px){.mf-quick-card{grid-template-columns:44px minmax(0,1fr) 18px!important;gap:10px!important;padding:13px!important}.mf-quick-title{font-size:17px!important}.mf-quick-sub{font-size:12px!important;line-height:1.35!important}.quiz-dock{width:100%!important;padding:8px 10px max(18px,calc(8px + env(safe-area-inset-bottom)))!important}.quiz-tools{gap:6px!important}.quiz-tools .btn{font-size:12px!important;min-height:48px!important}.quiz-nav .btn{font-size:16px!important;min-height:52px!important}.quiz-wrap{padding-bottom:192px!important}}
 </style>
 <script>
 (function(){
 'use strict';
-/* Single authoritative route dispatcher. Loaded last.
-   Index declares `app` with top-level const, which is NOT a window property.
-   Export the same object once so final UI modules can safely use window.app
-   without creating a second state object. */
+/* RouterUI is the sole owner of bottom-nav transitions.  The critical rule is that the
+   shared state is the lexical `app` declared by Index.html.  Export that SAME object only
+   for modules that intentionally inspect window.app; never create a second state object. */
 try{ if(typeof app!=='undefined') window.app=app; }catch(e){}
 var lastNav={view:'',at:0};
 var lastQuick={key:'',at:0};
@@ -24,8 +29,6 @@ function route(view){
   view=String(view||'home');
   if(typeof app==='undefined')return;
   app.view=view;
-  var navEl=document.getElementById('nav');if(navEl)navEl.classList.remove('hidden');
-  if(typeof window.nav==='function')window.nav(view);
   if(view==='home'&&typeof window.home==='function')return window.home();
   if(view==='chapters'&&typeof window.chapters==='function')return window.chapters();
   if(view==='library'&&typeof window.library==='function')return window.library();
@@ -50,16 +53,16 @@ document.addEventListener('pointerdown',function(e){var label=loadLabelFrom(e.ta
 var baseLoading=window.loading;
 if(typeof baseLoading==='function')window.loading=function(on){var box=document.getElementById('loading');if(on&&box)box.setAttribute('data-label',pendingLoadLabel||'Loading quiz…');var out=baseLoading.apply(this,arguments);if(!on){pendingLoadLabel='Loading quiz…';if(box)box.removeAttribute('data-label')}return out};
 
+/* Remove Timer from the visible quiz tools while preserving the underlying quiz/session
+   engine for backward compatibility. Keep only Starred, Difficult, Concept and Pause. */
+function normalizeQuizTools(){var tools=document.querySelector('.quiz-tools');if(!tools)return;Array.from(tools.querySelectorAll('button')).forEach(function(b){var t=String(b.textContent||'').trim();if(/timer/i.test(t)||b.id==='mathsTimerBtn'||b.matches('.maths-timer-btn,[data-maths-timer]'))b.remove()});var keep=Array.from(tools.querySelectorAll('button')).filter(function(b){return /star|difficult|concept|pause/i.test(String(b.textContent||''))});if(keep.length===4){keep.forEach(function(b){b.style.display='';});}}
+var baseRenderQuestion=window.renderQuestion;
+if(typeof baseRenderQuestion==='function')window.renderQuestion=function(){var out=baseRenderQuestion.apply(this,arguments);queueMicrotask(normalizeQuizTools);return out};
+document.addEventListener('DOMContentLoaded',normalizeQuizTools,{once:true});
+
 /* Final boot: after every injected module has executed, render the authoritative
    cached-first Home once. This also recovers from the legacy init callback racing
    with module injection. */
-setTimeout(function(){
-  try{
-    if(typeof app!=='undefined'&&(!app.view||app.view==='home')&&typeof window.home==='function')window.home();
-  }catch(e){
-    var main=document.getElementById('main');
-    if(main&&!main.innerHTML)main.innerHTML='<div class="content"><div class="card">Unable to open Maths Revision. Tap refresh once.</div></div>';
-  }
-},0);
+setTimeout(function(){try{if(typeof app!=='undefined'){window.app=app;route(app.view||'home')}}catch(e){console.error(e)}},0);
 })();
 </script>
