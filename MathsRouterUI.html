@@ -1,0 +1,23 @@
+<script>
+(function(){
+'use strict';
+/* Single authoritative route dispatcher. Loaded last. */
+var lastNav={view:'',at:0};
+function route(view){
+  view=String(view||'home');
+  if(!window.app)return;
+  app.view=view;
+  var navEl=document.getElementById('nav');if(navEl)navEl.classList.remove('hidden');
+  if(typeof window.nav==='function')window.nav(view);
+  if(view==='home'&&typeof window.home==='function')return window.home();
+  if(view==='chapters'&&typeof window.chapters==='function')return window.chapters();
+  if(view==='library'&&typeof window.library==='function')return window.library();
+  if(view==='ondemand'&&typeof window.ondemand==='function')return window.ondemand();
+  if(view==='progress'&&typeof window.progress==='function')return window.progress();
+}
+window.showView=route;
+function navButton(target){return target&&target.closest?target.closest('#nav button[data-view]'):null}
+document.addEventListener('pointerup',function(e){var b=navButton(e.target);if(!b)return;var v=String(b.dataset.view||'home');lastNav={view:v,at:Date.now()};e.preventDefault();e.stopImmediatePropagation();route(v)},true);
+document.addEventListener('click',function(e){var b=navButton(e.target);if(!b)return;var v=String(b.dataset.view||'home');if(lastNav.view===v&&Date.now()-lastNav.at<700){e.preventDefault();e.stopImmediatePropagation();return}e.preventDefault();e.stopImmediatePropagation();route(v)},true);
+})();
+</script>
