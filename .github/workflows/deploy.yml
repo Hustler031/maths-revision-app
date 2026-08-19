@@ -25,42 +25,46 @@ jobs:
         run: |
           cat *.gs > /tmp/maths-server.js
           node --check /tmp/maths-server.js
-      - name: Validate browser JavaScript
+      - name: Validate active browser JavaScript
         shell: bash
         run: |
           python - <<'PY'
           import re, pathlib, sys
-          names=('MathsV3UI.html','MathsV3Compat.html','MathsV4UI.html','MathsV5UI.html','MathsV6UI.html','MathsV7UI.html','MathsV7Bootstrap.html','MathsShellUI.html','MathsFinalUI.html','MathsAuditFixUI.html')
+          names=('MathsV3UI.html','MathsV3Compat.html','MathsFinalUI.html','MathsRouterUI.html')
           for name in names:
               text=pathlib.Path(name).read_text(encoding='utf-8')
               blocks=re.findall(r'<script>([\s\S]*?)</script>', text)
               if not blocks: sys.exit(f'{name} script block missing')
               pathlib.Path('/tmp/'+name+'.js').write_text('\n'.join(blocks),encoding='utf-8')
           PY
-          for f in /tmp/MathsV3UI.html.js /tmp/MathsV3Compat.html.js /tmp/MathsV4UI.html.js /tmp/MathsV5UI.html.js /tmp/MathsV6UI.html.js /tmp/MathsV7UI.html.js /tmp/MathsV7Bootstrap.html.js /tmp/MathsShellUI.html.js /tmp/MathsFinalUI.html.js /tmp/MathsAuditFixUI.html.js; do node --check "$f"; done
+          for f in /tmp/MathsV3UI.html.js /tmp/MathsV3Compat.html.js /tmp/MathsFinalUI.html.js /tmp/MathsRouterUI.html.js; do node --check "$f"; done
       - name: Validate runtime contracts
         shell: bash
         run: |
           set -e
           SERVER="$(cat *.gs)"
-          FRONTEND="$(cat Index.html MathsV3UI.html MathsV3Compat.html MathsV4UI.html MathsV5UI.html MathsV6UI.html MathsV7UI.html MathsV7Bootstrap.html MathsShellUI.html MathsFinalUI.html MathsAuditFixUI.html)"
-          for token in startMathsV6Quiz getMathsSnapshotV6 getMathsSnapshotV8 getMathsHomeV8 getMathsNewHubV8 getStarredRevisionV6 getConceptsHubV6 getMathsScopeMetricV6 getMathsCacheVersionV8 toggleConceptV6 toggleStarredV6 toggleDifficultV6; do
+          FRONTEND="$(cat Index.html MathsV3UI.html MathsV3Compat.html MathsFinalUI.html MathsRouterUI.html)"
+          for token in startMathsV6Quiz getMathsSnapshotV8 getMathsHomeV8 getMathsNewHubV8 getStarredRevisionV6 getConceptsHubV6 getMathsScopeMetricV6 getMathsCacheVersionV8 toggleConceptV6 toggleStarredV6 toggleDifficultV6; do
             [[ "$SERVER" == *"$token"* ]] || { echo "Missing backend contract: $token"; exit 1; }
           done
-          for token in openChapterHub openTopicHub openStudyGroup openGlobalNewV3 openStarredRevisionV3 openConceptsV4 openQuestionJump renderQuestion "Coverage" "Wrong" "Difficult" "Starred" "Practice All" "View All" "Concept" "Timer" "mf-strip-host" "Fresh-first"; do
+          for token in openChapterHub openTopicHub openStudyGroup openGlobalNewV3 openStarredRevisionV3 openConceptsV4 openQuestionJump renderQuestion "Coverage" "Wrong" "Difficult" "Starred" "Practice All" "View All" "Concept" "Timer" "mf-strip-host" "Fresh-first" "window.showView=route"; do
             [[ "$FRONTEND" == *"$token"* ]] || { echo "Missing frontend contract: $token"; exit 1; }
           done
-          grep -q "HtmlService.createHtmlOutputFromFile('MathsFinalUI')" CompletePracticeUI.gs || { echo 'Authoritative Maths final UI is not wired.'; exit 1; }
-          grep -q "HtmlService.createHtmlOutputFromFile('MathsAuditFixUI')" CompletePracticeUI.gs || { echo 'Final Maths audit guard is not wired.'; exit 1; }
-          grep -q "HtmlService.createHtmlOutputFromFile('MathsShellUI')" CompletePracticeUI.gs || { echo 'Maths shell is not wired.'; exit 1; }
+          grep -q "HtmlService.createHtmlOutputFromFile('MathsV3UI')" CompletePracticeUI.gs || exit 1
+          grep -q "HtmlService.createHtmlOutputFromFile('MathsV3Compat')" CompletePracticeUI.gs || exit 1
+          grep -q "HtmlService.createHtmlOutputFromFile('MathsFinalUI')" CompletePracticeUI.gs || exit 1
+          grep -q "HtmlService.createHtmlOutputFromFile('MathsRouterUI')" CompletePracticeUI.gs || exit 1
+          for obsolete in MathsV4UI MathsV5UI MathsV6UI MathsV7UI MathsV7Bootstrap MathsShellUI MathsAuditFixUI; do
+            if grep -q "createHtmlOutputFromFile('$obsolete')" CompletePracticeUI.gs; then echo "Obsolete UI layer still injected: $obsolete"; exit 1; fi
+          done
           grep -q "function demandUiPatch_(){return '';" DemandUI.gs || exit 1
           grep -q "function chapterGroupsUiPatch_(){return '';" ChapterGroupsUI.gs || exit 1
           grep -q 'viewport-fit=cover' Index.html || exit 1
           grep -q 'width:min(820px,100%)' Index.html || exit 1
           grep -q '"access": "ANYONE"' appsscript.json || exit 1
           grep -q '"executeAs": "USER_DEPLOYING"' appsscript.json || exit 1
-          if grep -q 'MutationObserver' MathsV3UI.html MathsV3Compat.html MathsV4UI.html MathsV5UI.html MathsV6UI.html MathsV7UI.html MathsV7Bootstrap.html MathsShellUI.html MathsFinalUI.html MathsAuditFixUI.html; then echo 'MutationObserver forbidden.'; exit 1; fi
-          if grep -q 'document.body.scrollHeight' Index.html MathsV3UI.html MathsV3Compat.html MathsV4UI.html MathsV5UI.html MathsV6UI.html MathsV7UI.html MathsV7Bootstrap.html MathsShellUI.html MathsFinalUI.html MathsAuditFixUI.html; then echo 'Answer auto-scroll regression.'; exit 1; fi
+          if grep -q 'MutationObserver' MathsV3UI.html MathsV3Compat.html MathsFinalUI.html MathsRouterUI.html; then echo 'MutationObserver forbidden.'; exit 1; fi
+          if grep -q 'document.body.scrollHeight' Index.html MathsV3UI.html MathsV3Compat.html MathsFinalUI.html MathsRouterUI.html; then echo 'Answer auto-scroll regression.'; exit 1; fi
 
   deploy:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
