@@ -1,3 +1,14 @@
+<style>
+/* Final interaction polish: keep Home rows readable and quiz controls clear of the phone edge. */
+.mf-quick-card>span:nth-child(2){display:block;min-width:0;overflow:hidden}
+.mf-quick-title,.mf-quick-sub{display:block!important;max-width:100%;white-space:normal;overflow-wrap:anywhere}
+.mf-quick-title{margin:0 0 4px!important}.mf-quick-sub{margin:0!important}
+.quiz-dock{bottom:12px!important;width:min(800px,calc(100% - 20px))!important;border:1px solid var(--line)!important;border-radius:16px!important;padding:7px 8px calc(7px + env(safe-area-inset-bottom))!important;box-shadow:0 8px 26px rgba(0,0,0,.18)}
+.quiz-wrap{padding-bottom:166px!important}
+.loading{flex-direction:column!important;gap:14px!important}
+.loading:after{content:attr(data-label);display:block;min-height:20px;color:var(--muted);font-size:14px;font-weight:800;letter-spacing:.01em}
+@media(max-width:390px){.mf-quick-card{grid-template-columns:44px minmax(0,1fr) 18px!important;gap:10px!important;padding:13px!important}.mf-quick-title{font-size:17px!important}.mf-quick-sub{font-size:12px!important;line-height:1.35!important}.quiz-dock{width:calc(100% - 16px)!important;bottom:12px!important}.quiz-wrap{padding-bottom:170px!important}}
+</style>
 <script>
 (function(){
 'use strict';
@@ -6,6 +17,7 @@
 var routeSerial=0;
 var lastPointerRoute={key:'',at:0};
 var lastNavPointer={key:'',at:0};
+var pendingLoadLabel='Loading quiz…';
 function q(s,r){return (r||document).querySelector(s)}
 function qa(s,r){return Array.from((r||document).querySelectorAll(s))}
 function metric(req){return new Promise(function(ok,bad){google.script.run.withSuccessHandler(ok).withFailureHandler(bad).getMathsScopeMetricV6(req||{})})}
@@ -21,7 +33,15 @@ wrap('startDemandSet',function(id){return {scope:'demand_set',setId:String(id),t
 wrap('openCalculationHub',function(id){return {scope:'demand_set',setId:String(id),title:'Calculation Training'}});
 ['home','chapters','library','ondemand','progress','openGlobalNewV3','openStarredRevisionV3','openConceptsV4'].forEach(function(name){var base=window[name];if(typeof base!=='function')return;window[name]=function(){routeSerial++;return base.apply(this,arguments)}});
 
-/* Home quick rows: pointerup navigates immediately and the synthetic click is swallowed. */
+/* Label the full-screen loader before any quiz request starts. This works for final and
+   legacy practice buttons because pointerdown runs before their click handlers. */
+function loadLabelFrom(target){if(!target||!target.closest)return '';var b=target.closest('button,[data-mf-action],#mfDaily,#mfResume');if(!b)return '';if(b.id==='mfDaily')return 'Loading today’s practice…';if(b.id==='mfResume')return 'Loading saved practice…';var t=String(b.textContent||'').replace(/\s+/g,' ').trim();if(/difficult/i.test(t))return 'Loading difficult practice…';if(/random/i.test(t))return 'Loading random practice…';if(/weak/i.test(t))return 'Loading weak practice…';if(/star/i.test(t))return 'Loading starred practice…';if(/new/i.test(t))return 'Loading new practice…';if(/practice all|all/i.test(t))return 'Loading Practice All…';if(/continue|resume/i.test(t))return 'Loading saved practice…';return ''}
+document.addEventListener('pointerdown',function(e){var s=loadLabelFrom(e.target);if(s)pendingLoadLabel=s},true);
+var baseLoading=window.loading;
+if(typeof baseLoading==='function')window.loading=function(on){var box=q('#loading');if(on&&box)box.setAttribute('data-label',pendingLoadLabel||'Loading quiz…');var out=baseLoading.apply(this,arguments);if(!on){pendingLoadLabel='Loading quiz…';if(box)box.removeAttribute('data-label')}return out};
+
+/* Home quick rows: one delegated pointer route. It remains valid even when cached Home is
+   immediately replaced by fresh Home data, so Starred/New/Concepts work on the first tap. */
 function routeForTarget(target,requireHome){if(!target||!target.closest)return null;if(requireHome&&(!window.app||app.view!=='home'))return null;var card=target.closest('#mfNew,#mfStar,#mfConcept');if(!card)return null;if(card.id==='mfNew')return {key:'new',fn:'openGlobalNewV3'};if(card.id==='mfStar')return {key:'star',fn:'openStarredRevisionV3'};return {key:'concept',fn:'openConceptsV4'}}
 document.addEventListener('pointerup',function(e){var r=routeForTarget(e.target,true);if(!r)return;lastPointerRoute={key:r.key,at:Date.now()};e.preventDefault();e.stopImmediatePropagation();var fn=window[r.fn];if(typeof fn==='function')fn()},true);
 document.addEventListener('click',function(e){var r=routeForTarget(e.target,false);if(!r)return;if(lastPointerRoute.key===r.key&&Date.now()-lastPointerRoute.at<650){e.preventDefault();e.stopImmediatePropagation();return}},true);
@@ -33,8 +53,6 @@ function runNav(v){var fn=window.showView;if(typeof fn==='function')fn(v)}
 document.addEventListener('pointerup',function(e){var v=navRoute(e.target);if(!v)return;lastNavPointer={key:v,at:Date.now()};e.preventDefault();e.stopImmediatePropagation();runNav(v)},true);
 document.addEventListener('click',function(e){var v=navRoute(e.target);if(!v)return;e.preventDefault();e.stopImmediatePropagation();if(lastNavPointer.key===v&&Date.now()-lastNavPointer.at<700)return;runNav(v)},true);
 
-/* If a legacy renderer paints after a bottom-nav route, repair only when the DOM clearly
-   disagrees with the selected page. There is no polling loop. */
 function routeLooksRight(v){var main=q('#main');if(!main)return true;if(v==='home')return !!q('.mf-home',main);if(v==='progress')return !!q('.mf-overview',main);return true}
 function repairRoute(v){[40,180].forEach(function(ms){setTimeout(function(){if(!window.app||app.view!==v||routeLooksRight(v))return;runNav(v)},ms)})}
 var originalShowView=window.showView;
