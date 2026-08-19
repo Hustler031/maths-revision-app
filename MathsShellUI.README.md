@@ -1,0 +1,1 @@
+MathsShellUI.html is a final shell/routing normalization module loaded after the existing V7 bootstrap. It owns first-click Home routing guards, single top performance strip placement, duplicate practice action cleanup, and semantic minimalist metric colours. It does not replace the quiz/session/data engine.
