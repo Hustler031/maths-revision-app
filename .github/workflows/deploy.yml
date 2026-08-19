@@ -12,6 +12,7 @@ on:
 permissions:
   contents: write
 
+# Operational note: this workflow is also used to force a validated deployment after UI-only navigation updates.
 jobs:
   validate:
     runs-on: ubuntu-latest
