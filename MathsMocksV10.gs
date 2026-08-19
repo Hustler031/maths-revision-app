@@ -1,4 +1,5 @@
 const MATHS_MOCK_SET_ID_V10='MOCK_QUESTIONS';
+const MATHS_MOCK_SCHEMA_V10='mocks-v10';
 
 function mathsMockPoolV10_(chapter){
   const set=getDemandSetById_(MATHS_MOCK_SET_ID_V10);if(!set)return[];
@@ -13,7 +14,7 @@ function getMathsMocksHubV10(){
   ensureMathsInfrastructure_();const state=mathsStateMapV9_(),pool=mathsMockPoolV10_(),by={};
   pool.forEach(q=>{const c=String(q.chapter||'Other').trim()||'Other';(by[c]||(by[c]=[])).push(q)});
   const chapters=Object.keys(by).map(chapter=>({chapter,metric:mathsMockMetricV10_(by[chapter],state)})).sort((a,b)=>Number(b.metric.wrong||0)-Number(a.metric.wrong||0)||Number(b.metric.wrongPct||0)-Number(a.metric.wrongPct||0)||a.chapter.localeCompare(b.chapter));
-  return {version:mathsVersionV9_(),generatedAt:new Date().toISOString(),setId:MATHS_MOCK_SET_ID_V10,overall:mathsMockMetricV10_(pool,state),chapters};
+  return {version:mathsVersionV9_(),mockSchema:MATHS_MOCK_SCHEMA_V10,generatedAt:new Date().toISOString(),setId:MATHS_MOCK_SET_ID_V10,overall:mathsMockMetricV10_(pool,state),chapters};
 }
 function getMathsMockQuestionsV10(chapter){
   const state=mathsStateMapV9_(),notes=getNotesMap_();
