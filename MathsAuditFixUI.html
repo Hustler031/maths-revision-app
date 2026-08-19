@@ -1,10 +1,11 @@
 <script>
 (function(){
 'use strict';
-/* Final audit guard. Loaded after MathsFinalUI. It does not re-render pages; it only
-   protects the authoritative renderer from first-tap misses and late async strip writes. */
+/* Final audit guard. Loaded after MathsFinalUI. It protects the authoritative renderer
+   from duplicate tap dispatch, stale async strip writes, and legacy route repaint races. */
 var routeSerial=0;
 var lastPointerRoute={key:'',at:0};
+var lastNavPointer={key:'',at:0};
 function q(s,r){return (r||document).querySelector(s)}
 function qa(s,r){return Array.from((r||document).querySelectorAll(s))}
 function metric(req){return new Promise(function(ok,bad){google.script.run.withSuccessHandler(ok).withFailureHandler(bad).getMathsScopeMetricV6(req||{})})}
@@ -13,22 +14,32 @@ function paintMetric(req,serial){metric(req).then(function(m){if(serial!==routeS
 function stabilize(req){var serial=++routeSerial;if(!req)return;[0,180,650,1600].forEach(function(ms){setTimeout(function(){paintMetric(req,serial)},ms)})}
 function groupReq(key){if(key==='mocks')return {scope:'demand_set',setId:'MOCK_QUESTIONS',title:'Mock Questions'};var list=(app.bootstrap&&app.bootstrap.chapters||[]).filter(function(c){var x=String(c.chapter||'').toLowerCase(),g=/fraction pattern|triplet|calculation memory|square|cube/.test(x)?'misc':/percentage|profit|loss|discount|ratio|proportion|average|mixture|alligation|interest|time.*work|pipe|cistern|speed|distance|train|boat|stream|partnership|ages|work.*wage/.test(x)?'arithmetic':'advanced';return g===key});return {scope:'group',chapters:list.map(function(c){return c.chapter}),groupName:key,title:key}}
 function wrap(name,reqBuilder){var base=window[name];if(typeof base!=='function')return;window[name]=function(){var args=[].slice.call(arguments),out=base.apply(this,args),req=reqBuilder&&reqBuilder.apply(this,args);if(req)stabilize(req);else routeSerial++;return out}}
-/* Guard all scoped final routes. Late responses from a page just left are overwritten
-   only by the currently active scope, eliminating the disappearing/wrong strip race. */
 wrap('openStudyGroup',function(k){return groupReq(k)});
 wrap('openChapterHub',function(ch){return {scope:'chapter',chapter:ch,title:ch}});
 wrap('openTopicHub',function(ch,t){return {scope:'topic',chapter:ch,majorTopic:t,title:t}});
 wrap('startDemandSet',function(id){return {scope:'demand_set',setId:String(id),title:'Saved Set'}});
 wrap('openCalculationHub',function(id){return {scope:'demand_set',setId:String(id),title:'Calculation Training'}});
-['home','chapters','progress','openGlobalNewV3','openStarredRevisionV3','openConceptsV4'].forEach(function(name){var base=window[name];if(typeof base!=='function')return;window[name]=function(){routeSerial++;return base.apply(this,arguments)}});
+['home','chapters','library','ondemand','progress','openGlobalNewV3','openStarredRevisionV3','openConceptsV4'].forEach(function(name){var base=window[name];if(typeof base!=='function')return;window[name]=function(){routeSerial++;return base.apply(this,arguments)}});
 
-/* Android/Apps-Script webview first-tap guard for the three Home quick rows.
-   pointerup performs navigation immediately; the synthetic click that follows is swallowed. */
+/* Home quick rows: pointerup navigates immediately and the synthetic click is swallowed. */
 function routeForTarget(target,requireHome){if(!target||!target.closest)return null;if(requireHome&&(!window.app||app.view!=='home'))return null;var card=target.closest('#mfNew,#mfStar,#mfConcept');if(!card)return null;if(card.id==='mfNew')return {key:'new',fn:'openGlobalNewV3'};if(card.id==='mfStar')return {key:'star',fn:'openStarredRevisionV3'};return {key:'concept',fn:'openConceptsV4'}}
 document.addEventListener('pointerup',function(e){var r=routeForTarget(e.target,true);if(!r)return;lastPointerRoute={key:r.key,at:Date.now()};e.preventDefault();e.stopImmediatePropagation();var fn=window[r.fn];if(typeof fn==='function')fn()},true);
 document.addEventListener('click',function(e){var r=routeForTarget(e.target,false);if(!r)return;if(lastPointerRoute.key===r.key&&Date.now()-lastPointerRoute.at<650){e.preventDefault();e.stopImmediatePropagation();return}},true);
 
-/* Remove obsolete duplicate strip hosts if an older layer recreates one. */
+/* Bottom navigation is routed in capture phase. This prevents the inline onclick plus any
+   legacy listeners from dispatching two competing routes on Android webviews. */
+function navRoute(target){if(!target||!target.closest)return null;var b=target.closest('#nav button[data-view]');if(!b)return null;var v=String(b.dataset.view||'');if(!/^(home|chapters|library|ondemand|progress)$/.test(v))return null;return v}
+function runNav(v){var fn=window.showView;if(typeof fn==='function')fn(v)}
+document.addEventListener('pointerup',function(e){var v=navRoute(e.target);if(!v)return;lastNavPointer={key:v,at:Date.now()};e.preventDefault();e.stopImmediatePropagation();runNav(v)},true);
+document.addEventListener('click',function(e){var v=navRoute(e.target);if(!v)return;e.preventDefault();e.stopImmediatePropagation();if(lastNavPointer.key===v&&Date.now()-lastNavPointer.at<700)return;runNav(v)},true);
+
+/* If a legacy renderer paints after a bottom-nav route, repair only when the DOM clearly
+   disagrees with the selected page. There is no polling loop. */
+function routeLooksRight(v){var main=q('#main');if(!main)return true;if(v==='home')return !!q('.mf-home',main);if(v==='progress')return !!q('.mf-overview',main);return true}
+function repairRoute(v){[40,180].forEach(function(ms){setTimeout(function(){if(!window.app||app.view!==v||routeLooksRight(v))return;runNav(v)},ms)})}
+var originalShowView=window.showView;
+if(typeof originalShowView==='function')window.showView=function(v){var out=originalShowView.apply(this,arguments);if(v==='home'||v==='progress')repairRoute(v);return out};
+
 function clean(){var hosts=qa('#maths-global-strip,.v5-scope-strip,.v4-strip-wrap,.v7-page-strip,.maths-top-strip');hosts.forEach(function(x){if(x&&x.id!=='mf-strip-host')x.remove()})}
 [0,120,500,1400].forEach(function(ms){setTimeout(clean,ms)});
 })();
