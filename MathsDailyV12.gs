@@ -1,4 +1,4 @@
-const MATHS_DAILY_VERSION='v12';
+const MATHS_DAILY_VERSION='v13';
 const MATHS_DAILY_DEFAULT_SIZE=20;
 
 function mathsStudyClockV12_(){
@@ -11,13 +11,28 @@ function mathsStudyClockV12_(){
   return {ready:true,day:day,chapter:'Mixed Revision',timezone:tz,startDate:start,today:today};
 }
 
-function mathsCalculationIdsV12_(){
+function mathsDemandSetIdsV12_(setId){
   const ids={};
   try{
-    const set=getDemandSetById_(MATHS.CALC_SET_ID);
+    const set=getDemandSetById_(String(setId||''));
     if(set)json_(set.question_ids_json,[]).forEach(id=>{const x=String(id||'').trim();if(x)ids[x]=true});
   }catch(e){}
   return ids;
+}
+
+function mathsCalculationIdsV12_(){return mathsDemandSetIdsV12_(MATHS.CALC_SET_ID)}
+function mathsMockIdsV12_(){return mathsDemandSetIdsV12_('MOCK_QUESTIONS')}
+
+function mathsDailyLectureChapterNamesV12_(){
+  const names={};
+  try{
+    sheetObjects_(getSheet_(MATHS.SHEETS.PLAN)).forEach(r=>{
+      if(normalizeLabel_(r.status||'Active')==='inactive')return;
+      const chapter=String(r.chapter||r.chapter_name||'').trim();
+      if(chapter)names[normalizeLabel_(chapter)]=chapter;
+    });
+  }catch(e){}
+  return names;
 }
 
 function mathsIsCalculationQuestionV12_(q,calcIds){
@@ -28,19 +43,21 @@ function mathsIsCalculationQuestionV12_(q,calcIds){
   return chapter==='calculation training'||chapter==='calculation memory';
 }
 
-function mathsIsDailyQuestionV12_(q,calcIds){
+function mathsIsDailyQuestionV12_(q,ctx){
   if(!q||!active_(q))return false;
-  if(typeof mathsIsLectureChapterSeedV11_==='function'&&!mathsIsLectureChapterSeedV11_(q))return false;
-  if(mathsIsCalculationQuestionV12_(q,calcIds))return false;
-  const type=normalizeLabel_(q.card_type||'');
-  if(['formula','method','pattern','trap','concept','memory'].includes(type))return false;
+  ctx=ctx||{};
+  const id=String(q.question_id||'').trim(),chapter=normalizeLabel_(q.chapter||''),topic=normalizeLabel_(q.topic||''),type=normalizeLabel_(q.card_type||'');
+  if(!id||!ctx.lectureChapters||!ctx.lectureChapters[chapter])return false;
+  if(ctx.calcIds&&ctx.calcIds[id])return false;
+  if(ctx.mockIds&&ctx.mockIds[id])return false;
+  if(mathsIsCalculationQuestionV12_(q,ctx.calcIds))return false;
+  if(topic==='concepts')return false;
+  if(['formula','concept','memory','pattern','trap'].includes(type))return false;
   return true;
 }
 
-function mathsDailyEligibleV12_(){
-  const calcIds=mathsCalculationIdsV12_();
-  return getAllQuestions_().filter(q=>mathsIsDailyQuestionV12_(q,calcIds));
-}
+function mathsDailyContextV12_(){return {calcIds:mathsCalculationIdsV12_(),mockIds:mathsMockIdsV12_(),lectureChapters:mathsDailyLectureChapterNamesV12_()}}
+function mathsDailyEligibleV12_(){const ctx=mathsDailyContextV12_();return getAllQuestions_().filter(q=>mathsIsDailyQuestionV12_(q,ctx))}
 
 function mathsDailySessionsV12_(){
   return sheetObjects_(getSheet_(MATHS.SHEETS.SESSIONS)).filter(r=>normalizeLabel_(r.mode)==='daily').map(r=>{
@@ -48,17 +65,9 @@ function mathsDailySessionsV12_(){
   }).filter(x=>x.day>0).sort((a,b)=>dateMs_(b.row.updated_at)-dateMs_(a.row.updated_at));
 }
 
-function mathsDailySessionForDayV12_(day){
-  return mathsDailySessionsV12_().find(x=>Number(x.day)===Number(day))||null;
-}
-
-function mathsSessionQuestionIdsV12_(row){
-  return new Set(json_((row&&row.question_ids_json)||'[]',[]).map(String));
-}
-
-function mathsPreviousDailyIdsV12_(day){
-  const prev=mathsDailySessionForDayV12_(Number(day)-1);return prev?mathsSessionQuestionIdsV12_(prev.row):new Set();
-}
+function mathsDailySessionForDayV12_(day){return mathsDailySessionsV12_().find(x=>Number(x.day)===Number(day))||null}
+function mathsSessionQuestionIdsV12_(row){return new Set(json_((row&&row.question_ids_json)||'[]',[]).map(String))}
+function mathsPreviousDailyIdsV12_(day){const prev=mathsDailySessionForDayV12_(Number(day)-1);return prev?mathsSessionQuestionIdsV12_(prev.row):new Set()}
 
 function mathsRecentPracticeIdsV12_(){
   const rows=sheetObjects_(getSheet_(MATHS.SHEETS.SESSIONS)).filter(r=>['daily','practice_more'].includes(normalizeLabel_(r.mode))).sort((a,b)=>dateMs_(b.updated_at)-dateMs_(a.updated_at)).slice(0,2);
@@ -82,29 +91,38 @@ function mathsDailyScoreV12_(q,state,recentIds){
 }
 
 function mathsAdaptiveDailyPoolV12_(count,recentIds){
-  const state=mathsStateMapV9_();
-  const eligible=mathsDailyEligibleV12_().filter(q=>!isMastered_(state[String(q.question_id)]||{}));
-  return eligible.map(q=>({q:q,score:mathsDailyScoreV12_(q,state,recentIds)})).sort((a,b)=>b.score-a.score||String(a.q.question_id).localeCompare(String(b.q.question_id))).slice(0,Math.min(Number(count||MATHS_DAILY_DEFAULT_SIZE),eligible.length)).map(x=>x.q);
+  const state=mathsStateMapV9_(),eligible=mathsDailyEligibleV12_().filter(q=>!isMastered_(state[String(q.question_id)]||{}));
+  const ranked=eligible.map(q=>({q,score:mathsDailyScoreV12_(q,state,recentIds)}));
+  const picked=[],chapterCounts={},want=Math.min(Math.max(1,Number(count||MATHS_DAILY_DEFAULT_SIZE)),ranked.length);
+  while(picked.length<want&&ranked.length){
+    let best=-1,bestAdjusted=-Infinity;
+    for(let i=0;i<ranked.length;i++){
+      const chapter=normalizeLabel_(ranked[i].q.chapter||'other'),used=Number(chapterCounts[chapter]||0),adjusted=ranked[i].score-used*12000;
+      if(adjusted>bestAdjusted){best=i;bestAdjusted=adjusted}
+    }
+    const item=ranked.splice(best,1)[0],chapter=normalizeLabel_(item.q.chapter||'other');
+    chapterCounts[chapter]=Number(chapterCounts[chapter]||0)+1;picked.push(item.q);
+  }
+  return picked;
 }
 
 function mathsDailyCompositionV12_(pool,state){
-  const out={difficult:0,wrong:0,unseen:0,revision:0};state=state||mathsStateMapV9_();
-  (pool||[]).forEach(q=>{const s=state[String(q.question_id)]||{};if(bool_(s.difficult))out.difficult++;else if(normalizeLabel_(s.last_result)==='wrong')out.wrong++;else if(Number(s.attempts||0)===0)out.unseen++;else out.revision++});
+  const out={difficult:0,wrong:0,unseen:0,revision:0,chapters:{}};state=state||mathsStateMapV9_();
+  (pool||[]).forEach(q=>{const s=state[String(q.question_id)]||{},chapter=String(q.chapter||'Other');out.chapters[chapter]=Number(out.chapters[chapter]||0)+1;if(bool_(s.difficult))out.difficult++;else if(normalizeLabel_(s.last_result)==='wrong')out.wrong++;else if(Number(s.attempts||0)===0)out.unseen++;else out.revision++});
   return out;
 }
 
 function mathsMakeDailySessionV12_(pool,day,mode,title,request){
   const state=mathsStateMapV9_(),sessionId=Utilities.getUuid(),composition=mathsDailyCompositionV12_(pool,state),params=Object.assign({},request||{},{planDay:Number(day),planChapter:'Mixed Revision',adaptiveDailyV12:true,dailyVersion:MATHS_DAILY_VERSION,dailyComposition:composition});
   const payload=mathsAvoidRepeatOptionV9_(sessionPayload_(sessionId,pool,state,title,mode,0,null),state);payload.planDay=Number(day);payload.planChapter='Mixed Revision';payload.dailyComposition=composition;
-  saveSession_({session_id:sessionId,mode:mode,title:title,question_ids_json:JSON.stringify(pool.map(q=>q.question_id)),current_index:0,updated_at:new Date(),completed:false,params_json:JSON.stringify(params)});
+  saveSession_({session_id:sessionId,mode,title,question_ids_json:JSON.stringify(pool.map(q=>q.question_id)),current_index:0,updated_at:new Date(),completed:false,params_json:JSON.stringify(params)});
   return payload;
 }
 
 function startMathsDailyV12(request){
-  ensureMathsInfrastructure_();request=Object.assign({},request||{});const clock=mathsStudyClockV12_(),day=Math.max(1,Number(request.planDay||clock.day));
-  const existing=mathsDailySessionForDayV12_(day);
+  ensureMathsInfrastructure_();request=Object.assign({},request||{});const clock=mathsStudyClockV12_(),day=Math.max(1,Number(request.planDay||clock.day)),existing=mathsDailySessionForDayV12_(day);
   if(existing){if(!bool_(existing.row.completed))return resumeSession(String(existing.row.session_id));return {ok:false,dailyComplete:true,message:'Day '+day+' is complete. Use Practice More for another mixed set.'}}
-  const size=Math.max(1,Number(getSetting_('daily_chapter_size',MATHS_DAILY_DEFAULT_SIZE)||MATHS_DAILY_DEFAULT_SIZE)),pool=mathsAdaptiveDailyPoolV12_(size,mathsPreviousDailyIdsV12_(day));
+  const pool=mathsAdaptiveDailyPoolV12_(MATHS_DAILY_DEFAULT_SIZE,mathsPreviousDailyIdsV12_(day));
   if(!pool.length)return {ok:false,message:'No eligible Daily questions are available.'};
   return mathsMakeDailySessionV12_(pool,day,'daily','Day '+day+' · Mixed Revision',request);
 }
@@ -126,10 +144,11 @@ function mathsPendingDailyV12_(currentDay){
 }
 
 function getMathsHomeV12(){
-  const snap=getMathsSnapshotV9(false),newHub=getMathsNewHubV9(),schedule=mathsStudyClockV12_(),baseTarget=Math.max(1,Number(getSetting_('daily_chapter_size',MATHS_DAILY_DEFAULT_SIZE)||MATHS_DAILY_DEFAULT_SIZE)),found=mathsDailySessionForDayV12_(schedule.day),dailyRow=found&&found.row||null,params=found&&found.params||{},sessionIds=dailyRow?json_(dailyRow.question_ids_json,[]):[],target=sessionIds.length||baseTarget,done=dailyRow?(bool_(dailyRow.completed)?target:Math.min(target,mathsSessionAttemptCountV12_(dailyRow.session_id))):0,resume=getSafeResumeSessionV9_(),concepts=getConceptsHubV9();
-  return {version:snap.version,generatedAt:new Date().toISOString(),schedule:schedule,daily:{target:target,done:done,left:Math.max(0,target-done),completed:!!(dailyRow&&bool_(dailyRow.completed)),sessionId:dailyRow?String(dailyRow.session_id||''):'',composition:params.dailyComposition||null,adaptive:true},resume:resume,resumeIsDaily:!!(resume&&dailyRow&&String(resume.sessionId)===String(dailyRow.session_id)),newCount:Number(newHub.overall&&newHub.overall.total||0),starred:Number(snap.overall.starred||0),difficult:Number(snap.overall.difficult||0),concepts:Number(concepts.metric.total||0),pending:mathsPendingDailyV12_(schedule.day),overall:snap.overall};
+  const snap=typeof readMathsProgressSnapshotV10==='function'?readMathsProgressSnapshotV10():getMathsSnapshotV9(false),schedule=mathsStudyClockV12_(),baseTarget=MATHS_DAILY_DEFAULT_SIZE,found=mathsDailySessionForDayV12_(schedule.day),dailyRow=found&&found.row||null,params=found&&found.params||{},sessionIds=dailyRow?json_(dailyRow.question_ids_json,[]):[],target=sessionIds.length||baseTarget,done=dailyRow?(bool_(dailyRow.completed)?target:Math.min(target,mathsSessionAttemptCountV12_(dailyRow.session_id))):0,resume=getSafeResumeSessionV9_(),state=mathsStateMapV9_(),newCount=mathsNewPoolV9_(mathsStudyQuestionsV9_(),state).length,conceptCount=Object.keys(mathsConceptIdsV9_()).length;
+  return {version:mathsVersionV9_(),generatedAt:new Date().toISOString(),schedule,daily:{target,done,left:Math.max(0,target-done),completed:!!(dailyRow&&bool_(dailyRow.completed)),sessionId:dailyRow?String(dailyRow.session_id||''):'',composition:params.dailyComposition||null,adaptive:true},resume,resumeIsDaily:!!(resume&&dailyRow&&String(resume.sessionId)===String(dailyRow.session_id)),newCount,starred:Number(snap.overall&&snap.overall.starred||0),difficult:Number(snap.overall&&snap.overall.difficult||0),concepts:conceptCount,pending:mathsPendingDailyV12_(schedule.day),overall:snap.overall||{}};
 }
 
 function auditMathsDailyV12(){
-  const pool=mathsDailyEligibleV12_(),calcIds=mathsCalculationIdsV12_();return {version:MATHS_DAILY_VERSION,studyDay:mathsStudyClockV12_(),eligible:pool.length,calculationLeak:pool.filter(q=>mathsIsCalculationQuestionV12_(q,calcIds)).length,generatedLeak:pool.filter(q=>String(q.question_id||'').toUpperCase().startsWith('GEN')).length};
+  const ctx=mathsDailyContextV12_(),pool=mathsDailyEligibleV12_(),byChapter={};pool.forEach(q=>byChapter[String(q.chapter||'Other')]=Number(byChapter[String(q.chapter||'Other')]||0)+1);
+  return {version:MATHS_DAILY_VERSION,studyDay:mathsStudyClockV12_(),eligible:pool.length,chapters:byChapter,calculationLeak:pool.filter(q=>mathsIsCalculationQuestionV12_(q,ctx.calcIds)).length,mockLeak:pool.filter(q=>ctx.mockIds[String(q.question_id)]).length,conceptLeak:pool.filter(q=>normalizeLabel_(q.topic||'')==='concepts').length,miscLeak:pool.filter(q=>['fraction patterns','triplets'].includes(normalizeLabel_(q.chapter||''))).length,generatedLeak:pool.filter(q=>String(q.question_id||'').toUpperCase().startsWith('GEN')).length};
 }
