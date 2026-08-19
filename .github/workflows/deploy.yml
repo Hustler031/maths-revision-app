@@ -25,37 +25,34 @@ jobs:
         run: |
           cat *.gs > /tmp/maths-server.js
           node --check /tmp/maths-server.js
-      - name: Validate active browser JavaScript
+      - name: Validate active browser JavaScript including Index
         shell: bash
         run: |
           python - <<'PY'
           import re, pathlib, sys
-          names=('MathsV3UI.html','MathsV3Compat.html','MathsQuizUI.html','MathsFinalUI.html','MathsRouterUI.html')
+          names=('Index.html','MathsQuizUI.html','MathsAppUI.html')
           for name in names:
               text=pathlib.Path(name).read_text(encoding='utf-8')
               blocks=re.findall(r'<script>([\s\S]*?)</script>', text)
               if not blocks: sys.exit(f'{name} script block missing')
               pathlib.Path('/tmp/'+name+'.js').write_text('\n'.join(blocks),encoding='utf-8')
           PY
-          for f in /tmp/MathsV3UI.html.js /tmp/MathsV3Compat.html.js /tmp/MathsQuizUI.html.js /tmp/MathsFinalUI.html.js /tmp/MathsRouterUI.html.js; do node --check "$f"; done
+          for f in /tmp/Index.html.js /tmp/MathsQuizUI.html.js /tmp/MathsAppUI.html.js; do node --check "$f"; done
       - name: Validate runtime contracts
         shell: bash
         run: |
           set -e
           SERVER="$(cat *.gs)"
-          FRONTEND="$(cat Index.html MathsV3UI.html MathsV3Compat.html MathsQuizUI.html MathsFinalUI.html MathsRouterUI.html)"
-          for token in startMathsV6Quiz getMathsSnapshotV8 getMathsHomeV8 getMathsNewHubV8 getStarredRevisionV6 getConceptsHubV6 getMathsScopeMetricV6 getMathsCacheVersionV8 toggleConceptV6 toggleStarredV6 toggleDifficultV6; do
+          FRONTEND="$(cat Index.html MathsQuizUI.html MathsAppUI.html)"
+          for token in getAppBootstrapV9 getMathsHomeV9 getMathsSnapshotV9 getMathsNewHubV9 getStarredRevisionV9 getStarredRevisionGroupV9 getConceptsHubV9 getMathsScopeMetricV9 getMathsCacheVersionV9 startMathsPracticeV9 toggleStarredV9 toggleDifficultV9 toggleConceptV9 saveSessionPosition; do
             [[ "$SERVER" == *"$token"* ]] || { echo "Missing backend contract: $token"; exit 1; }
           done
-          for token in openChapterHub openTopicHub openStudyGroup openGlobalNewV3 openStarredRevisionV3 openConceptsV4 openQuestionJump renderQuestion "Coverage" "Wrong" "Difficult" "Starred" "Practice All" "View All" "Concept" "Timer" "mf-strip-host" "Fresh-first" "window.showView=route"; do
+          for token in openChapterHub openTopicHub openStudyGroup openGlobalNewV3 openStarredRevisionV3 openConceptsV4 openQuestionJump renderQuestion "Coverage" "Wrong" "Difficult" "Starred" "Practice All" "View All" "Concept" "Fresh-first" "dock-tools" "dock-nav"; do
             [[ "$FRONTEND" == *"$token"* ]] || { echo "Missing frontend contract: $token"; exit 1; }
           done
-          grep -q "HtmlService.createHtmlOutputFromFile('MathsV3UI')" CompletePracticeUI.gs || exit 1
-          grep -q "HtmlService.createHtmlOutputFromFile('MathsV3Compat')" CompletePracticeUI.gs || exit 1
           grep -q "HtmlService.createHtmlOutputFromFile('MathsQuizUI')" CompletePracticeUI.gs || exit 1
-          grep -q "HtmlService.createHtmlOutputFromFile('MathsFinalUI')" CompletePracticeUI.gs || exit 1
-          grep -q "HtmlService.createHtmlOutputFromFile('MathsRouterUI')" CompletePracticeUI.gs || exit 1
-          for obsolete in MathsV4UI MathsV5UI MathsV6UI MathsV7UI MathsV7Bootstrap MathsShellUI MathsAuditFixUI; do
+          grep -q "HtmlService.createHtmlOutputFromFile('MathsAppUI')" CompletePracticeUI.gs || exit 1
+          for obsolete in MathsV3UI MathsV3Compat MathsFinalUI MathsRouterUI MathsV4UI MathsV5UI MathsV6UI MathsV7UI MathsV7Bootstrap MathsShellUI MathsAuditFixUI; do
             if grep -q "createHtmlOutputFromFile('$obsolete')" CompletePracticeUI.gs; then echo "Obsolete UI layer still injected: $obsolete"; exit 1; fi
           done
           grep -q "function demandUiPatch_(){return '';" DemandUI.gs || exit 1
@@ -64,8 +61,30 @@ jobs:
           grep -q 'width:min(820px,100%)' Index.html || exit 1
           grep -q '"access": "ANYONE"' appsscript.json || exit 1
           grep -q '"executeAs": "USER_DEPLOYING"' appsscript.json || exit 1
-          if grep -q 'MutationObserver' MathsV3UI.html MathsV3Compat.html MathsQuizUI.html MathsFinalUI.html MathsRouterUI.html; then echo 'MutationObserver forbidden.'; exit 1; fi
-          if grep -q 'document.body.scrollHeight' Index.html MathsV3UI.html MathsV3Compat.html MathsQuizUI.html MathsFinalUI.html MathsRouterUI.html; then echo 'Answer auto-scroll regression.'; exit 1; fi
+          if grep -q 'MutationObserver' MathsQuizUI.html MathsAppUI.html; then echo 'MutationObserver forbidden in active Maths UI.'; exit 1; fi
+          if grep -q 'document.body.scrollHeight' Index.html MathsQuizUI.html MathsAppUI.html; then echo 'Answer auto-scroll regression.'; exit 1; fi
+          if grep -qE 'mqTimer|mathsTimerBtn|installTimer|toggleTimer' MathsQuizUI.html MathsAppUI.html; then echo 'Timer control regression.'; exit 1; fi
+          grep -q '\.dock-tools' MathsQuizUI.html || { echo 'Quiz tool selector contract missing'; exit 1; }
+          grep -q '\.dock-nav' MathsQuizUI.html || { echo 'Quiz nav selector contract missing'; exit 1; }
+          if grep -qE '\.quiz-tools|\.quiz-nav' MathsQuizUI.html MathsAppUI.html; then echo 'Wrong English-only quiz selector leaked into Maths runtime'; exit 1; fi
+          grep -q "MATHS_DATA_VERSION" MathsCore.gs || { echo 'Monotonic cache version missing'; exit 1; }
+          grep -q "DIFFICULT.*ON\|IMPORTANT.*ON\|\['IMPORTANT','DIFFICULT'\]" MathsCore.gs || { echo 'Unified revision membership missing'; exit 1; }
+      - name: Build served-page smoke fixture
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          idx=Path('Index.html').read_text(encoding='utf-8')
+          quiz=Path('MathsQuizUI.html').read_text(encoding='utf-8')
+          app=Path('MathsAppUI.html').read_text(encoding='utf-8')
+          served=idx.replace('</body>',quiz+app+'</body>')
+          required=['id="main"','id="nav"','MathsAppUI','dock-tools','openQuestionJump','getAppBootstrapV9']
+          for token in required:
+              if token not in served: raise SystemExit('Served page missing '+token)
+          if served.find('MathsQuizUI')!=-1: pass
+          Path('/tmp/served.html').write_text(served,encoding='utf-8')
+          print('served fixture bytes',len(served.encode()))
+          PY
 
   deploy:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
