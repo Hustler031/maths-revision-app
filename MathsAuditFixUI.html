@@ -24,9 +24,9 @@ wrap('openCalculationHub',function(id){return {scope:'demand_set',setId:String(i
 
 /* Android/Apps-Script webview first-tap guard for the three Home quick rows.
    pointerup performs navigation immediately; the synthetic click that follows is swallowed. */
-function homeRoute(target){if(!window.app||app.view!=='home'||!target||!target.closest)return null;var card=target.closest('#mfNew,#mfStar,#mfConcept');if(!card)return null;if(card.id==='mfNew')return {key:'new',fn:'openGlobalNewV3'};if(card.id==='mfStar')return {key:'star',fn:'openStarredRevisionV3'};return {key:'concept',fn:'openConceptsV4'}}
-document.addEventListener('pointerup',function(e){var r=homeRoute(e.target);if(!r)return;lastPointerRoute={key:r.key,at:Date.now()};e.preventDefault();e.stopImmediatePropagation();var fn=window[r.fn];if(typeof fn==='function')fn()},true);
-document.addEventListener('click',function(e){var r=homeRoute(e.target);if(!r)return;if(lastPointerRoute.key===r.key&&Date.now()-lastPointerRoute.at<500){e.preventDefault();e.stopImmediatePropagation();return}},true);
+function routeForTarget(target,requireHome){if(!target||!target.closest)return null;if(requireHome&&(!window.app||app.view!=='home'))return null;var card=target.closest('#mfNew,#mfStar,#mfConcept');if(!card)return null;if(card.id==='mfNew')return {key:'new',fn:'openGlobalNewV3'};if(card.id==='mfStar')return {key:'star',fn:'openStarredRevisionV3'};return {key:'concept',fn:'openConceptsV4'}}
+document.addEventListener('pointerup',function(e){var r=routeForTarget(e.target,true);if(!r)return;lastPointerRoute={key:r.key,at:Date.now()};e.preventDefault();e.stopImmediatePropagation();var fn=window[r.fn];if(typeof fn==='function')fn()},true);
+document.addEventListener('click',function(e){var r=routeForTarget(e.target,false);if(!r)return;if(lastPointerRoute.key===r.key&&Date.now()-lastPointerRoute.at<650){e.preventDefault();e.stopImmediatePropagation();return}},true);
 
 /* Remove obsolete duplicate strip hosts if an older layer recreates one. */
 function clean(){var hosts=qa('#maths-global-strip,.v5-scope-strip,.v4-strip-wrap,.v7-page-strip,.maths-top-strip');hosts.forEach(function(x){if(x&&x.id!=='mf-strip-host')x.remove()})}
