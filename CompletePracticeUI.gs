@@ -3,6 +3,7 @@
 // getMathsHomeV14 is the focused-practice-safe wrapper over the protected getMathsHomeV12 Daily home implementation.
 function completePracticeUiPatch_(){
   ensureMathsProgressSnapshotV10_();
+  const startupReveal="<script>(function(){var l=document.getElementById('loading');if(l)l.classList.add('hidden')})();</script>";
   const quizUi=HtmlService.createHtmlOutputFromFile('MathsQuizUI').getContent();
   const oldCheck="function checkVersion(){call('version').then(v=>{const nv=String(v&&v.version||'');if(!nv)return;if(knownVersion&&nv!==knownVersion){knownVersion=nv;Object.keys(mem).forEach(k=>{if(k!=='bootstrap')drop(k)});refreshBootstrap().then(()=>{if(app.view==='home')home()})}else knownVersion=nv}).catch(()=>{})}";
   const newCheck="function delayRefresh(ms){return new Promise(r=>setTimeout(r,ms))}function refreshHomeSilent(){return call('home').then(d=>{write('home',d);if(app.view==='home')renderHome(d);return d}).catch(()=>null)}function refreshBootstrapSilent(){return refreshBootstrap().catch(()=>null)}function reconcileCaches(nv){knownVersion=String(nv||knownVersion);return refreshHomeSilent().then(()=>refreshBootstrapSilent()).then(()=>delayRefresh(80)).then(()=>prefetch())}function checkVersion(){return call('version').then(v=>{const nv=String(v&&v.version||'');if(!nv)return;const changed=!!knownVersion&&nv!==knownVersion;if(changed)return reconcileCaches(nv);knownVersion=nv}).catch(()=>{})}";
@@ -29,5 +30,5 @@ function completePracticeUiPatch_(){
   if(!appUi.includes('refreshHomeSilent')||!appUi.includes('reconcileCaches')||appUi.includes('Promise.allSettled([call(\'snapshot\')'))throw new Error('Maths cache orchestration replacement failed');
   const mocksUi=HtmlService.createHtmlOutputFromFile('MathsMocksUI').getContent();
   const finalizationUi=HtmlService.createHtmlOutputFromFile('MathsFinalizationUIV12').getContent();
-  return quizUi+appUi+mocksUi+finalizationUi;
+  return startupReveal+quizUi+appUi+mocksUi+finalizationUi;
 }
