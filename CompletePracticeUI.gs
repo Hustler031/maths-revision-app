@@ -1,5 +1,6 @@
 // Active served UI: one quiz layer + one application layer + isolated Mocks and finalization behavior.
 // Finalization keeps the single App renderer and changes only authoritative assembly-time routes/orchestration.
+// getMathsHomeV14 is the focused-practice-safe wrapper over the protected getMathsHomeV12 Daily home implementation.
 function completePracticeUiPatch_(){
   ensureMathsProgressSnapshotV10_();
   const quizUi=HtmlService.createHtmlOutputFromFile('MathsQuizUI').getContent();
