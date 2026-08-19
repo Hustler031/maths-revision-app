@@ -47,6 +47,15 @@ jobs:
           for token in getAppBootstrapV9 getAppBootstrapV11 getMathsHomeV12 getMathsSnapshotV9 getMathsNewHubV9 getStarredRevisionV9 getStarredRevisionGroupV9 getConceptsHubV9 getMathsScopeMetricV9 getMathsCacheVersionV9 startMathsPracticeV9 startMathsDailyV12 startMathsPracticeMoreV12 toggleStarredV9 toggleDifficultV9 toggleConceptV9 saveSessionPosition; do
             [[ "$SERVER" == *"$token"* ]] || { echo "Missing backend contract: $token"; exit 1; }
           done
+          for token in mathsDemandSetIdsV12_ mathsMockIdsV12_ mathsDailyLectureChapterNamesV12_ mathsAdaptiveDailyPoolV12_ mathsDailyCompositionV12_ mockLeak conceptLeak miscLeak; do
+            [[ "$SERVER" == *"$token"* ]] || { echo "Missing Daily V13 guard: $token"; exit 1; }
+          done
+          grep -Fq "const MATHS_DAILY_VERSION='v13'" MathsDailyV12.gs || { echo 'Daily V13 not active'; exit 1; }
+          grep -Fq "mathsAdaptiveDailyPoolV12_(MATHS_DAILY_DEFAULT_SIZE" MathsDailyV12.gs || { echo 'Daily is not fixed at 20'; exit 1; }
+          grep -Fq "ctx.mockIds&&ctx.mockIds[id]" MathsDailyV12.gs || { echo 'Mock exclusion missing'; exit 1; }
+          grep -Fq "ctx.calcIds&&ctx.calcIds[id]" MathsDailyV12.gs || { echo 'Calculation exclusion missing'; exit 1; }
+          grep -Fq "topic==='concepts'" MathsDailyV12.gs || { echo 'Concept-bank exclusion missing'; exit 1; }
+          if grep -Fq "['formula','method','pattern','trap','concept','memory']" MathsDailyV12.gs; then echo 'Method questions are still wrongly excluded from Daily'; exit 1; fi
           for token in openChapterHub openTopicHub openStudyGroup openGlobalNewV3 openStarredRevisionV3 openConceptsV4 openQuestionJump renderQuestion "Coverage" "Wrong" "Difficult" "Starred" "Practice All" "View All" "Concept" "dock-tools" "dock-nav" "mqTopTimer" "Asia/Kolkata"; do
             [[ "$FRONTEND" == *"$token"* ]] || { echo "Missing frontend contract: $token"; exit 1; }
           done
@@ -54,7 +63,12 @@ jobs:
           grep -q "HtmlService.createHtmlOutputFromFile('MathsAppUI')" CompletePracticeUI.gs || exit 1
           grep -q "HtmlService.createHtmlOutputFromFile('MathsMocksUI')" CompletePracticeUI.gs || exit 1
           grep -q "HtmlService.createHtmlOutputFromFile('MathsFinalizationUIV12')" CompletePracticeUI.gs || exit 1
-          grep -q "getMathsHomeV12" CompletePracticeUI.gs || { echo 'Daily V12 home route missing'; exit 1; }
+          grep -Fq 'refreshHomeSilent' CompletePracticeUI.gs || { echo 'Cached-first Home reconciliation missing'; exit 1; }
+          grep -Fq 'reconcileCaches' CompletePracticeUI.gs || { echo 'Non-destructive cache reconciliation missing'; exit 1; }
+          grep -Fq "const jobs=[['new','new'],['starred','starred'],['concepts','concepts'],['snapshot','snapshot']]" CompletePracticeUI.gs || { echo 'Sequential background refresh order missing'; exit 1; }
+          grep -Fq "if(!appUi.includes('refreshHomeSilent')" CompletePracticeUI.gs || { echo 'Assembly replacement guard missing'; exit 1; }
+          grep -Fq "Object.keys(mem).forEach(k=>{if(k!='bootstrap')drop(k)})" MathsAppUI.html && { echo 'Unexpected cache invalidation spelling variant'; exit 1; } || true
+          grep -q "getMathsHomeV12" CompletePracticeUI.gs || { echo 'Daily home route missing'; exit 1; }
           grep -q "Practice More" CompletePracticeUI.gs || { echo 'Completed Daily action missing'; exit 1; }
           grep -q "Calculation excluded" CompletePracticeUI.gs || { echo 'Daily calculation exclusion label missing'; exit 1; }
           for obsolete in MathsV3UI MathsV3Compat MathsFinalUI MathsRouterUI MathsV4UI MathsV5UI MathsV6UI MathsV7UI MathsV7Bootstrap MathsShellUI MathsAuditFixUI; do
@@ -73,39 +87,22 @@ jobs:
           grep -q 'sessionStorage' MathsFinalizationUIV12.html || { echo 'Timer session preference missing'; exit 1; }
           grep -q 'startMathsDailyV12' MathsFinalizationUIV12.html || { echo 'Daily client route missing'; exit 1; }
           grep -q 'startMathsPracticeMoreV12' MathsFinalizationUIV12.html || { echo 'Practice More client route missing'; exit 1; }
-          grep -q 'mathsCalculationIdsV12_' MathsDailyV12.gs || { echo 'Calculation exclusion helper missing'; exit 1; }
-          grep -q 'mathsIsDailyQuestionV12_' MathsDailyV12.gs || { echo 'Daily question-bank eligibility missing'; exit 1; }
-          grep -q "adaptiveDailyV12:true" MathsDailyV12.gs || { echo 'Deterministic Daily session marker missing'; exit 1; }
-          grep -q "chapter:'Mixed Revision'" MathsDailyV12.gs || { echo 'Mixed Daily schedule missing'; exit 1; }
           grep -q '\.dock-tools' MathsQuizUI.html || { echo 'Quiz tool selector contract missing'; exit 1; }
           grep -q '\.dock-nav' MathsQuizUI.html || { echo 'Quiz nav selector contract missing'; exit 1; }
           if grep -qE '\.quiz-tools|\.quiz-nav' MathsQuizUI.html MathsAppUI.html MathsMocksUI.html MathsFinalizationUIV12.html; then echo 'Wrong English-only quiz selector leaked into Maths runtime'; exit 1; fi
           grep -q "MATHS_DATA_VERSION" MathsCore.gs || { echo 'Monotonic cache version missing'; exit 1; }
           grep -q "\['IMPORTANT','DIFFICULT'\]" MathsCore.gs || { echo 'Unified revision membership missing'; exit 1; }
-      - name: Build served-page smoke fixture
+      - name: Validate served-page assembly sources
         shell: bash
         run: |
-          python - <<'PY'
-          from pathlib import Path
-          idx=Path('Index.html').read_text(encoding='utf-8')
-          quiz=Path('MathsQuizUI.html').read_text(encoding='utf-8')
-          app=Path('MathsAppUI.html').read_text(encoding='utf-8')
-          mocks=Path('MathsMocksUI.html').read_text(encoding='utf-8')
-          final=Path('MathsFinalizationUIV12.html').read_text(encoding='utf-8')
-          app=app.replace('r.getAppBootstrapV9()','r.getAppBootstrapV11()')
-          app=app.replace('r.getMathsHomeV9()','r.getMathsHomeV12()')
-          app=app.replace("Finish Day '+day+' first, then use focused practice.",'Mixed adaptive revision · whole question bank, Calculation excluded.')
-          app=app.replace("Fresh-first: '+target+' questions · reinforcement 0","Adaptive mix: '+target+' questions · Difficult, wrong, unseen and due first")
-          app=app.replace("'+(done?'Continue Day '+day+' · '+left+' left':'Start Day '+day+' · '+left+' left')+'","'+(daily.completed?'Practice More':done?'Continue Day '+day+' · '+left+' left':'Start Day '+day+' · '+left+' left')+'")
-          app=app.replace("qs('#maDaily').onclick=()=>beginQuiz('daily',{planDay:day});","qs('#maDaily').onclick=()=>daily.completed?beginQuiz('practice_more',{count:target}):beginQuiz('daily',{planDay:day});")
-          served=idx.replace('</body>',quiz+app+mocks+final+'</body>')
-          required=['id="main"','id="nav"','maths-app-v9','dock-tools','openQuestionJump','getAppBootstrapV11','getMathsHomeV12','Practice More','Calculation excluded','mqTopTimer','startMathsDailyV12']
-          for token in required:
-              if token not in served: raise SystemExit('Served page missing '+token)
-          if 'Fresh-first:' in served: raise SystemExit('Old Daily copy still served')
-          Path('/tmp/served.html').write_text(served,encoding='utf-8')
-          print('served fixture bytes',len(served.encode()))
-          PY
+          set -e
+          grep -Fq "function checkVersion(){call('version').then" MathsAppUI.html || { echo 'Expected cache source signature changed; assembly replacement would fail'; exit 1; }
+          grep -Fq "function prefetch(){if(prefetching)return;prefetching=true;Promise.allSettled" MathsAppUI.html || { echo 'Expected prefetch source signature changed; assembly replacement would fail'; exit 1; }
+          grep -Fq "refreshBootstrap().then(()=>home())" MathsAppUI.html || { echo 'Expected startup source signature changed; assembly replacement would fail'; exit 1; }
+          grep -Fq ".replace(oldCheck,newCheck)" CompletePracticeUI.gs || exit 1
+          grep -Fq ".replace(oldPrefetch,newPrefetch)" CompletePracticeUI.gs || exit 1
+          grep -Fq ".replace(oldStart,newStart)" CompletePracticeUI.gs || exit 1
+          echo 'Assembly source signatures verified.'
 
   deploy:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
