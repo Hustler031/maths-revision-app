@@ -1,0 +1,62 @@
+name: Validate Focused Practice Isolation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '**/*.gs'
+      - '**/*.html'
+      - '.github/workflows/focused-practice-contract.yml'
+  push:
+    branches: [main]
+    paths:
+      - '**/*.gs'
+      - '**/*.html'
+      - '.github/workflows/focused-practice-contract.yml'
+
+jobs:
+  focused-practice-isolation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Validate Apps Script syntax
+        shell: bash
+        run: |
+          cat *.gs > /tmp/maths-server.js
+          node --check /tmp/maths-server.js
+      - name: Validate academic eligibility contract
+        shell: bash
+        run: |
+          set -e
+          F=MathsAcademicEligibilityV14.gs
+          test -f "$F"
+          grep -Fq "const MATHS_ACADEMIC_ELIGIBILITY_VERSION='v14'" "$F"
+          grep -Fq "template==='MOCK_QUESTIONS'" "$F"
+          grep -Fq "ctx.mockIds&&ctx.mockIds[id]" "$F"
+          grep -Fq "ctx.calcIds&&ctx.calcIds[id]" "$F"
+          grep -Fq "topic==='concepts'" "$F"
+          grep -Fq "['formula','concept','memory','pattern','trap'].includes(type)" "$F"
+          if grep -Fq "['formula','method','pattern','trap'" "$F"; then echo 'Method was incorrectly excluded from academic practice'; exit 1; fi
+          grep -Fq "mathsAcademicQuestionsV14_()" "$F"
+          grep -Fq "startMathsPracticeV14" "$F"
+          grep -Fq "getMathsScopeMetricV14" "$F"
+          grep -Fq "getMathsViewItemsV14" "$F"
+          grep -Fq "getMathsNewHubV14" "$F"
+          grep -Fq "getMathsSnapshotV14" "$F"
+          grep -Fq "getAppBootstrapV14" "$F"
+          grep -Fq "getMathsHomeV14" "$F"
+          grep -Fq "auditMathsFocusedPracticeV14" "$F"
+      - name: Validate active UI routes
+        shell: bash
+        run: |
+          set -e
+          grep -Fq "r.getAppBootstrapV14()" CompletePracticeUI.gs
+          grep -Fq "r.getMathsHomeV14()" CompletePracticeUI.gs
+          grep -Fq "r.getMathsSnapshotV14(false)" CompletePracticeUI.gs
+          grep -Fq "r.getMathsNewHubV14()" CompletePracticeUI.gs
+          grep -Fq "r.getMathsScopeMetricV14(arg||{})" CompletePracticeUI.gs
+          grep -Fq "r.startMathsPracticeV14(arg||{})" CompletePracticeUI.gs
+          grep -Fq "r.getMathsViewItemsV14(arg||{})" CompletePracticeUI.gs
