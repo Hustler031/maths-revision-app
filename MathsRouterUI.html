@@ -1,11 +1,15 @@
 <script>
 (function(){
 'use strict';
-/* Single authoritative route dispatcher. Loaded last. */
+/* Single authoritative route dispatcher. Loaded last.
+   Index declares `app` with top-level const, which is NOT a window property.
+   Export the same object once so final UI modules can safely use window.app
+   without creating a second state object. */
+try{ if(typeof app!=='undefined') window.app=app; }catch(e){}
 var lastNav={view:'',at:0};
 function route(view){
   view=String(view||'home');
-  if(!window.app)return;
+  if(typeof app==='undefined')return;
   app.view=view;
   var navEl=document.getElementById('nav');if(navEl)navEl.classList.remove('hidden');
   if(typeof window.nav==='function')window.nav(view);
@@ -19,5 +23,16 @@ window.showView=route;
 function navButton(target){return target&&target.closest?target.closest('#nav button[data-view]'):null}
 document.addEventListener('pointerup',function(e){var b=navButton(e.target);if(!b)return;var v=String(b.dataset.view||'home');lastNav={view:v,at:Date.now()};e.preventDefault();e.stopImmediatePropagation();route(v)},true);
 document.addEventListener('click',function(e){var b=navButton(e.target);if(!b)return;var v=String(b.dataset.view||'home');if(lastNav.view===v&&Date.now()-lastNav.at<700){e.preventDefault();e.stopImmediatePropagation();return}e.preventDefault();e.stopImmediatePropagation();route(v)},true);
+/* Final boot: after every injected module has executed, render the authoritative
+   cached-first Home once. This also recovers from the legacy init callback racing
+   with module injection. */
+setTimeout(function(){
+  try{
+    if(typeof app!=='undefined'&&(!app.view||app.view==='home')&&typeof window.home==='function')window.home();
+  }catch(e){
+    var main=document.getElementById('main');
+    if(main&&!main.innerHTML)main.innerHTML='<div class="content"><div class="card">Unable to open Maths Revision. Tap refresh once.</div></div>';
+  }
+},0);
 })();
 </script>
