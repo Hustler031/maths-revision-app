@@ -1,1 +1,1 @@
-function completePracticeUiPatch_(){return HtmlService.createHtmlOutputFromFile('MathsV3UI').getContent()+HtmlService.createHtmlOutputFromFile('MathsV3Compat').getContent()+HtmlService.createHtmlOutputFromFile('MathsQuizUI').getContent()+HtmlService.createHtmlOutputFromFile('MathsFinalUI').getContent()+HtmlService.createHtmlOutputFromFile('MathsRouterUI').getContent();}
+function completePracticeUiPatch_(){return HtmlService.createHtmlOutputFromFile('MathsQuizUI').getContent()+HtmlService.createHtmlOutputFromFile('MathsAppUI').getContent();}
