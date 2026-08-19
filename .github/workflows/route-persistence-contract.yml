@@ -1,0 +1,35 @@
+name: Validate Route Persistence
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'CompletePracticeUI.gs'
+      - '.github/workflows/route-persistence-contract.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'CompletePracticeUI.gs'
+      - '.github/workflows/route-persistence-contract.yml'
+
+jobs:
+  route-persistence:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate route restoration contract
+        shell: bash
+        run: |
+          set -e
+          F=CompletePracticeUI.gs
+          grep -Fq "ROUTE_KEY='maths-ui-route-v1'" "$F"
+          grep -Fq "function saveRoute" "$F"
+          grep -Fq "function restoreRoute" "$F"
+          grep -Fq "server('resumeSession',r.sessionId)" "$F"
+          grep -Fq "app.view='quiz'" "$F"
+          grep -Fq "chapterVisibilityVersion||'')==='v14'" "$F"
+          grep -Fq "type:'mockChapter'" "$F"
+          grep -Fq "type:'conceptChapter'" "$F"
+          grep -Fq "type:'newChapter'" "$F"
+          grep -Fq "originalShowView" "$F"
+          if grep -Fq "localStorage.setItem(ROUTE_KEY,JSON.stringify({questions:" "$F"; then echo 'Quiz payload must not be cached in route state'; exit 1; fi
