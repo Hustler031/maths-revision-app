@@ -1,0 +1,42 @@
+<style>
+.mq-top-timer{width:auto!important;min-width:72px!important;height:34px!important;padding:0 9px!important;font-size:11px!important;font-weight:850!important;white-space:nowrap!important}.mq-top-timer.mq-timer-on{border-color:color-mix(in srgb,var(--primary) 55%,var(--line))!important;color:var(--primary)!important;background:var(--primary2)!important}.topbar.mq-quiz-active .top-actions{align-items:center}.topbar.mq-quiz-active .brand{min-width:0}.topbar.mq-quiz-active .brand>div:first-child{min-width:0}
+@media(max-width:390px){.mq-top-timer{min-width:62px!important;padding:0 6px!important;font-size:10.5px!important}.topbar.mq-quiz-active .brand small{display:none}.topbar.mq-quiz-active .brand h1{font-size:21px!important}}
+</style>
+<script>
+(function(){
+'use strict';
+var TIMER_PREF='maths-visible-timer-v12',DAY_KEY='maths-india-day-v12',ROLLOVER_KEY='maths-day-rollover-pending-v12';
+var timerOn=false,timerHandle=null,quizVisible=false;
+try{timerOn=sessionStorage.getItem(TIMER_PREF)==='1'}catch(e){}
+function one(s,r){return(r||document).querySelector(s)}
+function indiaDay(){try{return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Kolkata',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())}catch(e){return new Date().toISOString().slice(0,10)}}
+function fmt(sec){sec=Math.max(0,Math.floor(Number(sec||0)));return Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0')}
+function clearTick(){if(timerHandle){clearInterval(timerHandle);timerHandle=null}}
+function paintTimer(){var b=one('#mqTopTimer');if(!b)return;if(!timerOn){b.textContent='⏱ Timer';b.classList.remove('mq-timer-on');return}var start=Number(window.app&&app.qStart||Date.now()),sec=(Date.now()-start)/1000;b.textContent='⏱ '+fmt(sec);b.classList.add('mq-timer-on')}
+function ensureTimer(){
+  if(!quizVisible||!one('.quiz-wrap'))return hideTimer();
+  var actions=one('.top-actions'),top=one('.topbar');if(!actions||!top)return;
+  var b=one('#mqTopTimer');if(!b){b=document.createElement('button');b.id='mqTopTimer';b.type='button';b.className='iconbtn mq-top-timer';b.setAttribute('aria-label','Toggle quiz timer');b.onclick=function(){timerOn=!timerOn;try{sessionStorage.setItem(TIMER_PREF,timerOn?'1':'0')}catch(e){};syncTick();paintTimer()};actions.insertBefore(b,actions.firstChild)}
+  top.classList.add('mq-quiz-active');syncTick();paintTimer();
+}
+function hideTimer(){clearTick();var b=one('#mqTopTimer');if(b)b.remove();var top=one('.topbar');if(top)top.classList.remove('mq-quiz-active')}
+function syncTick(){clearTick();if(timerOn&&quizVisible&&one('.quiz-wrap'))timerHandle=setInterval(paintTimer,1000)}
+function openV12(mode,opts){
+  if(typeof loading==='function')loading(true);var runner=google.script.run.withSuccessHandler(function(x){if(typeof loading==='function')loading(false);if(!x||x.ok===false){if(typeof toast==='function')toast(x&&x.message||'No eligible questions');return}if(typeof window.openQuiz==='function')window.openQuiz(x)}).withFailureHandler(function(e){if(typeof loading==='function')loading(false);if(typeof toast==='function')toast(e&&e.message?e.message:String(e))});
+  if(mode==='daily')runner.startMathsDailyV12(opts||{});else runner.startMathsPracticeMoreV12(opts||{});
+}
+var baseBegin=window.beginQuiz;if(typeof baseBegin==='function')window.beginQuiz=function(mode,opts){if(mode==='daily'||mode==='practice_more')return openV12(mode,opts||{});return baseBegin.apply(this,arguments)};
+var baseOpen=window.openQuiz;if(typeof baseOpen==='function')window.openQuiz=function(){var out=baseOpen.apply(this,arguments);quizVisible=true;ensureTimer();return out};
+var baseRender=window.renderQuestion;if(typeof baseRender==='function')window.renderQuestion=function(){var out=baseRender.apply(this,arguments);if(quizVisible)ensureTimer();return out};
+var baseSave=window.saveAndHome;if(typeof baseSave==='function')window.saveAndHome=function(){quizVisible=false;hideTimer();var out=baseSave.apply(this,arguments);if(pendingRollover())setTimeout(function(){location.reload()},80);return out};
+var baseComplete=window.completeQuiz;if(typeof baseComplete==='function')window.completeQuiz=function(){quizVisible=false;hideTimer();return baseComplete.apply(this,arguments)};
+function pendingRollover(){try{return sessionStorage.getItem(ROLLOVER_KEY)==='1'}catch(e){return false}}
+function clearDayCaches(){try{localStorage.removeItem('maths-app-v9:home');localStorage.removeItem('maths-app-v9:bootstrap')}catch(e){}}
+function rolloverCheck(){
+  var now=indiaDay(),prev='';try{prev=localStorage.getItem(DAY_KEY)||'';localStorage.setItem(DAY_KEY,now)}catch(e){}
+  if(!prev||prev===now)return false;clearDayCaches();try{sessionStorage.setItem(ROLLOVER_KEY,'1')}catch(e){};if(!quizVisible&&!one('.quiz-wrap')){try{sessionStorage.removeItem(ROLLOVER_KEY)}catch(e){};location.reload()}return true;
+}
+if(!rolloverCheck()){try{localStorage.setItem(DAY_KEY,indiaDay())}catch(e){}}
+setInterval(function(){rolloverCheck();if(pendingRollover()&&!quizVisible&&!one('.quiz-wrap')){try{sessionStorage.removeItem(ROLLOVER_KEY)}catch(e){};location.reload()}},30000);
+})();
+</script>

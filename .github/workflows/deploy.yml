@@ -12,7 +12,6 @@ on:
 permissions:
   contents: write
 
-# Operational note: this workflow is also used to force a validated deployment after UI-only navigation updates.
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -31,28 +30,33 @@ jobs:
         run: |
           python - <<'PY'
           import re, pathlib, sys
-          names=('Index.html','MathsQuizUI.html','MathsAppUI.html')
+          names=('Index.html','MathsQuizUI.html','MathsAppUI.html','MathsMocksUI.html','MathsFinalizationUIV12.html')
           for name in names:
               text=pathlib.Path(name).read_text(encoding='utf-8')
               blocks=re.findall(r'<script>([\s\S]*?)</script>', text)
               if not blocks: sys.exit(f'{name} script block missing')
               pathlib.Path('/tmp/'+name+'.js').write_text('\n'.join(blocks),encoding='utf-8')
           PY
-          for f in /tmp/Index.html.js /tmp/MathsQuizUI.html.js /tmp/MathsAppUI.html.js; do node --check "$f"; done
+          for f in /tmp/Index.html.js /tmp/MathsQuizUI.html.js /tmp/MathsAppUI.html.js /tmp/MathsMocksUI.html.js /tmp/MathsFinalizationUIV12.html.js; do node --check "$f"; done
       - name: Validate runtime contracts
         shell: bash
         run: |
           set -e
           SERVER="$(cat *.gs)"
-          FRONTEND="$(cat Index.html MathsQuizUI.html MathsAppUI.html)"
-          for token in getAppBootstrapV9 getMathsHomeV9 getMathsSnapshotV9 getMathsNewHubV9 getStarredRevisionV9 getStarredRevisionGroupV9 getConceptsHubV9 getMathsScopeMetricV9 getMathsCacheVersionV9 startMathsPracticeV9 toggleStarredV9 toggleDifficultV9 toggleConceptV9 saveSessionPosition; do
+          FRONTEND="$(cat Index.html MathsQuizUI.html MathsAppUI.html MathsMocksUI.html MathsFinalizationUIV12.html)"
+          for token in getAppBootstrapV9 getAppBootstrapV11 getMathsHomeV12 getMathsSnapshotV9 getMathsNewHubV9 getStarredRevisionV9 getStarredRevisionGroupV9 getConceptsHubV9 getMathsScopeMetricV9 getMathsCacheVersionV9 startMathsPracticeV9 startMathsDailyV12 startMathsPracticeMoreV12 toggleStarredV9 toggleDifficultV9 toggleConceptV9 saveSessionPosition; do
             [[ "$SERVER" == *"$token"* ]] || { echo "Missing backend contract: $token"; exit 1; }
           done
-          for token in openChapterHub openTopicHub openStudyGroup openGlobalNewV3 openStarredRevisionV3 openConceptsV4 openQuestionJump renderQuestion "Coverage" "Wrong" "Difficult" "Starred" "Practice All" "View All" "Concept" "Fresh-first" "dock-tools" "dock-nav"; do
+          for token in openChapterHub openTopicHub openStudyGroup openGlobalNewV3 openStarredRevisionV3 openConceptsV4 openQuestionJump renderQuestion "Coverage" "Wrong" "Difficult" "Starred" "Practice All" "View All" "Concept" "dock-tools" "dock-nav" "mqTopTimer" "Asia/Kolkata"; do
             [[ "$FRONTEND" == *"$token"* ]] || { echo "Missing frontend contract: $token"; exit 1; }
           done
           grep -q "HtmlService.createHtmlOutputFromFile('MathsQuizUI')" CompletePracticeUI.gs || exit 1
           grep -q "HtmlService.createHtmlOutputFromFile('MathsAppUI')" CompletePracticeUI.gs || exit 1
+          grep -q "HtmlService.createHtmlOutputFromFile('MathsMocksUI')" CompletePracticeUI.gs || exit 1
+          grep -q "HtmlService.createHtmlOutputFromFile('MathsFinalizationUIV12')" CompletePracticeUI.gs || exit 1
+          grep -q "getMathsHomeV12" CompletePracticeUI.gs || { echo 'Daily V12 home route missing'; exit 1; }
+          grep -q "Practice More" CompletePracticeUI.gs || { echo 'Completed Daily action missing'; exit 1; }
+          grep -q "Calculation excluded" CompletePracticeUI.gs || { echo 'Daily calculation exclusion label missing'; exit 1; }
           for obsolete in MathsV3UI MathsV3Compat MathsFinalUI MathsRouterUI MathsV4UI MathsV5UI MathsV6UI MathsV7UI MathsV7Bootstrap MathsShellUI MathsAuditFixUI; do
             if grep -q "createHtmlOutputFromFile('$obsolete')" CompletePracticeUI.gs; then echo "Obsolete UI layer still injected: $obsolete"; exit 1; fi
           done
@@ -62,12 +66,20 @@ jobs:
           grep -q 'width:min(820px,100%)' Index.html || exit 1
           grep -q '"access": "ANYONE"' appsscript.json || exit 1
           grep -q '"executeAs": "USER_DEPLOYING"' appsscript.json || exit 1
-          if grep -q 'MutationObserver' MathsQuizUI.html MathsAppUI.html; then echo 'MutationObserver forbidden in active Maths UI.'; exit 1; fi
-          if grep -q 'document.body.scrollHeight' Index.html MathsQuizUI.html MathsAppUI.html; then echo 'Answer auto-scroll regression.'; exit 1; fi
-          if grep -qE 'mqTimer|mathsTimerBtn|installTimer|toggleTimer' MathsQuizUI.html MathsAppUI.html; then echo 'Timer control regression.'; exit 1; fi
+          if grep -q 'MutationObserver' MathsQuizUI.html MathsAppUI.html MathsMocksUI.html MathsFinalizationUIV12.html; then echo 'MutationObserver forbidden in active Maths UI.'; exit 1; fi
+          if grep -q 'document.body.scrollHeight' Index.html MathsQuizUI.html MathsAppUI.html MathsMocksUI.html MathsFinalizationUIV12.html; then echo 'Answer auto-scroll regression.'; exit 1; fi
+          if grep -qE 'mqTimer|mathsTimerBtn|installTimer|toggleTimer' MathsQuizUI.html MathsAppUI.html; then echo 'Old timer implementation leaked into base Maths UI.'; exit 1; fi
+          grep -q 'mqTopTimer' MathsFinalizationUIV12.html || { echo 'Quiz-only top timer missing'; exit 1; }
+          grep -q 'sessionStorage' MathsFinalizationUIV12.html || { echo 'Timer session preference missing'; exit 1; }
+          grep -q 'startMathsDailyV12' MathsFinalizationUIV12.html || { echo 'Daily client route missing'; exit 1; }
+          grep -q 'startMathsPracticeMoreV12' MathsFinalizationUIV12.html || { echo 'Practice More client route missing'; exit 1; }
+          grep -q 'mathsCalculationIdsV12_' MathsDailyV12.gs || { echo 'Calculation exclusion helper missing'; exit 1; }
+          grep -q 'mathsIsDailyQuestionV12_' MathsDailyV12.gs || { echo 'Daily question-bank eligibility missing'; exit 1; }
+          grep -q "adaptiveDailyV12:true" MathsDailyV12.gs || { echo 'Deterministic Daily session marker missing'; exit 1; }
+          grep -q "chapter:'Mixed Revision'" MathsDailyV12.gs || { echo 'Mixed Daily schedule missing'; exit 1; }
           grep -q '\.dock-tools' MathsQuizUI.html || { echo 'Quiz tool selector contract missing'; exit 1; }
           grep -q '\.dock-nav' MathsQuizUI.html || { echo 'Quiz nav selector contract missing'; exit 1; }
-          if grep -qE '\.quiz-tools|\.quiz-nav' MathsQuizUI.html MathsAppUI.html; then echo 'Wrong English-only quiz selector leaked into Maths runtime'; exit 1; fi
+          if grep -qE '\.quiz-tools|\.quiz-nav' MathsQuizUI.html MathsAppUI.html MathsMocksUI.html MathsFinalizationUIV12.html; then echo 'Wrong English-only quiz selector leaked into Maths runtime'; exit 1; fi
           grep -q "MATHS_DATA_VERSION" MathsCore.gs || { echo 'Monotonic cache version missing'; exit 1; }
           grep -q "\['IMPORTANT','DIFFICULT'\]" MathsCore.gs || { echo 'Unified revision membership missing'; exit 1; }
       - name: Build served-page smoke fixture
@@ -78,10 +90,19 @@ jobs:
           idx=Path('Index.html').read_text(encoding='utf-8')
           quiz=Path('MathsQuizUI.html').read_text(encoding='utf-8')
           app=Path('MathsAppUI.html').read_text(encoding='utf-8')
-          served=idx.replace('</body>',quiz+app+'</body>')
-          required=['id="main"','id="nav"','maths-app-v9','dock-tools','openQuestionJump','getAppBootstrapV9']
+          mocks=Path('MathsMocksUI.html').read_text(encoding='utf-8')
+          final=Path('MathsFinalizationUIV12.html').read_text(encoding='utf-8')
+          app=app.replace('r.getAppBootstrapV9()','r.getAppBootstrapV11()')
+          app=app.replace('r.getMathsHomeV9()','r.getMathsHomeV12()')
+          app=app.replace("Finish Day '+day+' first, then use focused practice.",'Mixed adaptive revision · whole question bank, Calculation excluded.')
+          app=app.replace("Fresh-first: '+target+' questions · reinforcement 0","Adaptive mix: '+target+' questions · Difficult, wrong, unseen and due first")
+          app=app.replace("'+(done?'Continue Day '+day+' · '+left+' left':'Start Day '+day+' · '+left+' left')+'","'+(daily.completed?'Practice More':done?'Continue Day '+day+' · '+left+' left':'Start Day '+day+' · '+left+' left')+'")
+          app=app.replace("qs('#maDaily').onclick=()=>beginQuiz('daily',{planDay:day});","qs('#maDaily').onclick=()=>daily.completed?beginQuiz('practice_more',{count:target}):beginQuiz('daily',{planDay:day});")
+          served=idx.replace('</body>',quiz+app+mocks+final+'</body>')
+          required=['id="main"','id="nav"','maths-app-v9','dock-tools','openQuestionJump','getAppBootstrapV11','getMathsHomeV12','Practice More','Calculation excluded','mqTopTimer','startMathsDailyV12']
           for token in required:
               if token not in served: raise SystemExit('Served page missing '+token)
+          if 'Fresh-first:' in served: raise SystemExit('Old Daily copy still served')
           Path('/tmp/served.html').write_text(served,encoding='utf-8')
           print('served fixture bytes',len(served.encode()))
           PY
