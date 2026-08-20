@@ -16,8 +16,11 @@ function mathsAcademicContextV14_(){
 function mathsIsNormalAcademicQuestionV14_(q,ctx){
   if(!q||!active_(q))return false;
   ctx=ctx||{};
-  const id=String(q.question_id||'').trim(),chapter=normalizeLabel_(q.chapter||''),topic=normalizeLabel_(q.topic||''),type=normalizeLabel_(q.card_type||''),template=String(q.template_group||'').trim().toUpperCase();
+  const id=String(q.question_id||'').trim(),chapter=normalizeLabel_(q.chapter||''),topic=normalizeLabel_(q.topic||''),type=normalizeLabel_(q.card_type||''),template=String(q.template_group||'').trim().toUpperCase(),bank=normalizeLabel_(q.practice_bank||'');
   if(!id||!chapter)return false;
+  // Positive inclusion: normal chapter practice accepts only rows explicitly classified ACADEMIC.
+  if(bank!=='academic')return false;
+  // Defense in depth: known special collections remain blocked even if misclassified later.
   if(ctx.mockIds&&ctx.mockIds[id])return false;
   if(ctx.calcIds&&ctx.calcIds[id])return false;
   if(template==='MOCK_QUESTIONS'||template==='CALC_TRAINING'||/^CALC_DAY/.test(template))return false;
@@ -114,5 +117,5 @@ function getMathsHomeV14(){
 
 function auditMathsFocusedPracticeV14(){
   const ctx=mathsAcademicContextV14_(),pool=mathsAcademicQuestionsV14_(),byChapter={};pool.forEach(q=>byChapter[String(q.chapter||'Other')]=Number(byChapter[String(q.chapter||'Other')]||0)+1);
-  return {version:MATHS_ACADEMIC_ELIGIBILITY_VERSION,eligible:pool.length,chapters:byChapter,mockLeak:pool.filter(q=>(ctx.mockIds&&ctx.mockIds[String(q.question_id)])||String(q.template_group||'').trim().toUpperCase()==='MOCK_QUESTIONS').length,calculationLeak:pool.filter(q=>(ctx.calcIds&&ctx.calcIds[String(q.question_id)])||normalizeLabel_(q.chapter)==='calculation training'||/^CALC_DAY/.test(String(q.template_group||'').trim().toUpperCase())).length,conceptLeak:pool.filter(q=>normalizeLabel_(q.topic)==='concepts'||['formula','concept','memory','pattern','trap'].includes(normalizeLabel_(q.card_type))).length};
+  return {version:MATHS_ACADEMIC_ELIGIBILITY_VERSION,eligible:pool.length,chapters:byChapter,practiceBankLeak:pool.filter(q=>normalizeLabel_(q.practice_bank||'')!=='academic').length,mockLeak:pool.filter(q=>(ctx.mockIds&&ctx.mockIds[String(q.question_id)])||String(q.template_group||'').trim().toUpperCase()==='MOCK_QUESTIONS').length,calculationLeak:pool.filter(q=>(ctx.calcIds&&ctx.calcIds[String(q.question_id)])||normalizeLabel_(q.chapter)==='calculation training'||/^CALC_DAY/.test(String(q.template_group||'').trim().toUpperCase())).length,conceptLeak:pool.filter(q=>normalizeLabel_(q.topic)==='concepts'||['formula','concept','memory','pattern','trap'].includes(normalizeLabel_(q.card_type))).length};
 }
