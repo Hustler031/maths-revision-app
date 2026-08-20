@@ -1,0 +1,49 @@
+name: Route race patch helper
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/route-race-patch-helper.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/fix-first-refresh-route
+      - name: Patch route restoration race only
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('CompletePracticeUI.gs'); s=p.read_text()
+          a="var ROUTE_KEY='maths-ui-route-v1',ROUTE_MAX=24*60*60*1000,started=Date.now(),explicitHome=false;"
+          b="var ROUTE_KEY='maths-ui-route-v1',ROUTE_MAX=24*60*60*1000,started=Date.now(),explicitHome=false,restoring=false;"
+          if a not in s: raise SystemExit('route declaration not found')
+          s=s.replace(a,b,1)
+          a="var saved=readRoute();\nvar originalOpenQuiz=window.openQuiz;if(originalOpenQuiz)window.openQuiz=function(x){if(x&&x.sessionId)saveRoute({type:'quiz',sessionId:String(x.sessionId)});if(typeof app!=='undefined')app.view='quiz';return originalOpenQuiz.apply(this,arguments)};\nvar originalHome=window.home;if(originalHome)window.home=function(){explicitHome=true;saveRoute({type:'home'});return originalHome.apply(this,arguments)};\nvar originalShowView=window.showView;if(originalShowView)window.showView=function(v){if(v==='home'&&!explicitHome&&saved&&saved.type!=='home'&&Date.now()-started<5000)return;return originalShowView.apply(this,arguments)};"
+          b="var saved=readRoute();restoring=!!(saved&&saved.type!=='home');\nvar originalOpenQuiz=window.openQuiz;if(originalOpenQuiz)window.openQuiz=function(x){if(x&&x.sessionId)saveRoute({type:'quiz',sessionId:String(x.sessionId)});if(typeof app!=='undefined')app.view='quiz';restoring=false;return originalOpenQuiz.apply(this,arguments)};\nvar originalSetView=window.setView;if(originalSetView)window.setView=function(v){if(v==='home'&&!explicitHome&&restoring)return;return originalSetView.apply(this,arguments)};\nvar originalShowView=window.showView;if(originalShowView)window.showView=function(v){if(v==='home'&&!explicitHome&&restoring)return;return originalShowView.apply(this,arguments)};"
+          if a not in s: raise SystemExit('route wrapper block not found')
+          s=s.replace(a,b,1)
+          a="function ready(){return typeof app!=='undefined'&&app.bootstrap&&String(app.bootstrap.chapterVisibilityVersion||'')==='v14'}\n(function wait(n){if(!saved||saved.type==='home')return;if(ready())return setTimeout(function(){restoreRoute(saved)},650);if(n>0)setTimeout(function(){wait(n-1)},100)})(50);"
+          b="function ready(){return typeof app!=='undefined'&&app.bootstrap&&String(app.bootstrap.chapterVisibilityVersion||'')==='v14'}\n(function wait(n){if(!saved||saved.type==='home'){restoring=false;return}if(ready())return setTimeout(function(){restoreRoute(saved);restoring=false},250);if(n>0)return setTimeout(function(){wait(n-1)},100);restoring=false})(150);"
+          if a not in s: raise SystemExit('route wait block not found')
+          s=s.replace(a,b,1); p.write_text(s)
+          p=Path('.github/workflows/route-persistence-contract.yml'); s=p.read_text()
+          marker="          grep -Fq \"originalShowView\" \"$F\"\n"
+          add="          grep -Fq \"restoring=!!(saved&&saved.type!=='home')\" \"$F\"\n          grep -Fq \"originalSetView\" \"$F\"\n          if grep -Fq \"var originalHome=window.home\" \"$F\"; then echo 'Programmatic home must not overwrite saved route'; exit 1; fi\n"
+          if add.strip() not in s:
+            if marker not in s: raise SystemExit('route contract marker not found')
+            s=s.replace(marker,marker+add,1)
+          p.write_text(s)
+          PY
+          git config user.name 'maths-revision-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add CompletePracticeUI.gs .github/workflows/route-persistence-contract.yml
+          git commit -m 'Fix first-refresh route restoration race'
+          git push origin HEAD:agent/fix-first-refresh-route
