@@ -1,0 +1,55 @@
+name: Apply session-only route state
+
+on:
+  push:
+    branches: [agent/session-only-route-state]
+    paths:
+      - '.github/workflows/apply-session-route-fix.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/session-only-route-state
+      - name: Move route persistence to sessionStorage only
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          p=Path('CompletePracticeUI.gs')
+          s=p.read_text(encoding='utf-8')
+          old="function saveRoute(r){try{r=r||{type:'home'};r.ts=Date.now();localStorage.setItem(ROUTE_KEY,JSON.stringify(r))}catch(e){}}\nfunction readRoute(){try{var r=JSON.parse(localStorage.getItem(ROUTE_KEY)||'null');if(!r||Date.now()-Number(r.ts||0)>ROUTE_MAX){localStorage.removeItem(ROUTE_KEY);return null}return r}catch(e){return null}}\nfunction clearRoute(){try{localStorage.removeItem(ROUTE_KEY)}catch(e){}}"
+          new="function saveRoute(r){try{r=r||{type:'home'};r.ts=Date.now();sessionStorage.setItem(ROUTE_KEY,JSON.stringify(r))}catch(e){}}\nfunction readRoute(){try{var r=JSON.parse(sessionStorage.getItem(ROUTE_KEY)||'null');if(!r||Date.now()-Number(r.ts||0)>ROUTE_MAX){sessionStorage.removeItem(ROUTE_KEY);return null}return r}catch(e){return null}}\nfunction clearRoute(){try{sessionStorage.removeItem(ROUTE_KEY)}catch(e){}}"
+          if s.count(old)!=1:
+              raise SystemExit(f'CompletePractice route block mismatch: {s.count(old)}')
+          s=s.replace(old,new,1)
+          p.write_text(s,encoding='utf-8')
+
+          p=Path('MathsFinalizationUIV12.html')
+          s=p.read_text(encoding='utf-8')
+          s2=s.replace("function readRoute(){try{var r=JSON.parse(localStorage.getItem(ROUTE_KEY)||'null');if(!r||r.type==='home')return null;return r}catch(e){return null}}", "function readRoute(){try{var r=JSON.parse(sessionStorage.getItem(ROUTE_KEY)||'null');if(!r||r.type==='home')return null;return r}catch(e){return null}}", 1)
+          s2=s2.replace("function preserveRoute(r){if(!r)return null;try{localStorage.setItem(ROUTE_KEY,JSON.stringify(r))}catch(e){}return r}", "function preserveRoute(r){if(!r)return null;try{sessionStorage.setItem(ROUTE_KEY,JSON.stringify(r))}catch(e){}return r}", 1)
+          if s2==s:
+              raise SystemExit('Finalization route storage replacement missed')
+          p.write_text(s2,encoding='utf-8')
+
+          p=Path('.github/workflows/route-persistence-contract.yml')
+          s=p.read_text(encoding='utf-8')
+          marker='          grep -Fq "function saveRoute" "$F"\n'
+          add='          grep -Fq "sessionStorage.setItem(ROUTE_KEY" "$F"\n          grep -Fq "sessionStorage.getItem(ROUTE_KEY" "$F"\n          if grep -Fq "localStorage.setItem(ROUTE_KEY" "$F"; then echo \'Route state must be session-only\'; exit 1; fi\n'
+          if add not in s:
+              if marker not in s: raise SystemExit('route contract marker missing')
+              s=s.replace(marker,marker+add,1)
+          p.write_text(s,encoding='utf-8')
+          PY
+          git config user.name 'maths-revision-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add CompletePracticeUI.gs MathsFinalizationUIV12.html .github/workflows/route-persistence-contract.yml
+          git commit -m 'Make route restoration session-only'
+          git push origin HEAD:agent/session-only-route-state
