@@ -44,8 +44,13 @@ setInterval(function(){rolloverCheck();if(pendingRollover()&&!quizVisible&&!one(
 (function(){
 'use strict';
 var ROUTE_KEY='maths-ui-route-v1',MAX_WAIT=15000,started=Date.now(),guardActive=false;
-function readRoute(){try{var r=JSON.parse(localStorage.getItem(ROUTE_KEY)||'null');if(!r||r.type==='home')return null;return r}catch(e){return null}}
-function preserveRoute(r){if(!r)return null;try{localStorage.setItem(ROUTE_KEY,JSON.stringify(r))}catch(e){}return r}
+var _routeSet=Storage.prototype.setItem,_routeGet=Storage.prototype.getItem,_routeRemove=Storage.prototype.removeItem;
+try{_routeRemove.call(localStorage,ROUTE_KEY)}catch(e){}
+Storage.prototype.setItem=function(k,v){if(this===localStorage&&String(k)===ROUTE_KEY)return _routeSet.call(sessionStorage,k,v);return _routeSet.call(this,k,v)};
+Storage.prototype.getItem=function(k){if(this===localStorage&&String(k)===ROUTE_KEY)return _routeGet.call(sessionStorage,k);return _routeGet.call(this,k)};
+Storage.prototype.removeItem=function(k){if(this===localStorage&&String(k)===ROUTE_KEY)return _routeRemove.call(sessionStorage,k);return _routeRemove.call(this,k)};
+function readRoute(){try{var r=JSON.parse(sessionStorage.getItem(ROUTE_KEY)||'null');if(!r||r.type==='home')return null;return r}catch(e){return null}}
+function preserveRoute(r){if(!r)return null;try{sessionStorage.setItem(ROUTE_KEY,JSON.stringify(r))}catch(e){}return r}
 function ready(){return typeof window.app!=='undefined'&&app.bootstrap&&String(app.bootstrap.chapterVisibilityVersion||'')==='v14'}
 function sameData(el,attr,value){return el&&String(el.getAttribute(attr)||'')===String(value||'')}
 function clickWhen(selector,attr,value,tries){tries=tries||30;var el=document.querySelector(selector);if(attr&&el&&!sameData(el,attr,value))el=null;if(!el&&attr){var all=document.querySelectorAll(selector);for(var i=0;i<all.length;i++){if(sameData(all[i],attr,value)){el=all[i];break}}}if(el){el.click();return true}if(tries>0)setTimeout(function(){clickWhen(selector,attr,value,tries-1)},100);return false}
