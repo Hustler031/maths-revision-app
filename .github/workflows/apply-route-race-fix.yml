@@ -51,3 +51,5 @@ jobs:
           git add CompletePracticeUI.gs .github/workflows/route-persistence-contract.yml
           git commit -m 'Fix first-refresh route restoration race'
           git push origin HEAD:agent/fix-first-refresh-route
+
+# trigger
