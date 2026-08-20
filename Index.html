@@ -60,7 +60,7 @@ function toggleTheme(){localStorage.setItem('maths_theme',document.body.classLis
 
 async function init(){
   applyTheme();
-  try{app.bootstrap=await server('getAppBootstrap');loading(false);showView('home')}
+  try{app.bootstrap=await server('getAppBootstrap');loading(false)}
   catch(e){loading(false);$('#main').innerHTML='<div class="content"><div class="card">'+esc(e.message)+'</div></div>'}
 }
 
