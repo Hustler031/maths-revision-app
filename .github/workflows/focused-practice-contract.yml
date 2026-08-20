@@ -34,6 +34,9 @@ jobs:
           F=MathsAcademicEligibilityV14.gs
           test -f "$F"
           grep -Fq "const MATHS_ACADEMIC_ELIGIBILITY_VERSION='v14'" "$F"
+          grep -Fq "bank=normalizeLabel_(q.practice_bank||'')" "$F"
+          grep -Fq "if(bank!=='academic')return false" "$F"
+          grep -Fq "practiceBankLeak" "$F"
           grep -Fq "template==='MOCK_QUESTIONS'" "$F"
           grep -Fq "ctx.mockIds&&ctx.mockIds[id]" "$F"
           grep -Fq "ctx.calcIds&&ctx.calcIds[id]" "$F"
