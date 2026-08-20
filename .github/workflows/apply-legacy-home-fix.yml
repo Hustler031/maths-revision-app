@@ -1,0 +1,46 @@
+name: Apply legacy home redirect fix
+
+on:
+  push:
+    branches: [agent/remove-legacy-home-redirect]
+    paths:
+      - '.github/workflows/apply-legacy-home-fix.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/remove-legacy-home-redirect
+      - name: Remove only legacy unconditional Home redirect
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('Index.html')
+          s=p.read_text()
+          old="try{app.bootstrap=await server('getAppBootstrap');loading(false);showView('home')}"
+          new="try{app.bootstrap=await server('getAppBootstrap');loading(false)}"
+          if s.count(old)!=1:
+              raise SystemExit(f'Expected exactly one legacy redirect, found {s.count(old)}')
+          s=s.replace(old,new,1)
+          p.write_text(s)
+
+          p=Path('.github/workflows/route-persistence-contract.yml')
+          s=p.read_text()
+          marker='          if grep -Fq "localStorage.setItem(ROUTE_KEY,JSON.stringify({questions:" "$F"; then echo \'Quiz payload must not be cached in route state\'; exit 1; fi\n'
+          add='          I=Index.html\n          if grep -Fq "loading(false);showView(\'home\')" "$I"; then echo \'Legacy init must not force Home after bootstrap\'; exit 1; fi\n'
+          if add not in s:
+              if marker not in s: raise SystemExit('route contract marker missing')
+              s=s.replace(marker,marker+add,1)
+          p.write_text(s)
+          PY
+          git config user.name 'maths-revision-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add Index.html .github/workflows/route-persistence-contract.yml
+          git commit -m 'Stop legacy bootstrap from forcing Home'
+          git push origin HEAD:agent/remove-legacy-home-redirect
