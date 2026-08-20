@@ -52,6 +52,7 @@ jobs:
           grep -Fq "getAppBootstrapV14" "$F"
           grep -Fq "getMathsHomeV14" "$F"
           grep -Fq "auditMathsFocusedPracticeV14" "$F"
+          grep -Fq "all=mathsStudyQuestionsV9_(),study=mathsAcademicQuestionsV14_()" Code.gs
       - name: Validate active UI routes
         shell: bash
         run: |
