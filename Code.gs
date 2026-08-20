@@ -25,7 +25,7 @@ function selectDemandSetPool_(ids,map,state,request,setName){
 }
 
 function startQuiz(request){
-  ensureMathsInfrastructure_();request=request||{};const mode=String(request.mode||'daily'),all=mathsStudyQuestionsV9_(),study=all,generated=getGeneratedQuestions_().filter(active_),state=mathsStateMapV9_();let pool=[],title=MATHS.TITLE,calcMeta=null,planDay=null,planChapter='',majorTopic='';
+  ensureMathsInfrastructure_();request=request||{};const mode=String(request.mode||'daily'),all=mathsStudyQuestionsV9_(),study=mathsAcademicQuestionsV14_(),generated=getGeneratedQuestions_().filter(active_),state=mathsStateMapV9_();let pool=[],title=MATHS.TITLE,calcMeta=null,planDay=null,planChapter='',majorTopic='';
   if(mode==='daily'){
     const scheduled=getScheduledPlan_(),requestedDay=Number(request.planDay||scheduled.day),entry=getPlanEntry_(requestedDay)||getPlanEntry_(scheduled.day);if(!entry)return {ok:false,message:'No scheduled lecture chapter yet.'};
     planDay=Number(entry.day);planChapter=String(entry.chapter||'');const size=Math.max(1,Number(entry.targetPerDay||getSetting_('daily_chapter_size',20)||20)),reinforcementSize=Math.max(0,Number(getSetting_('daily_reinforcement_size',0)||0));
