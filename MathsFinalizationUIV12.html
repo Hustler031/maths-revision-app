@@ -40,3 +40,35 @@ if(!rolloverCheck()){try{localStorage.setItem(DAY_KEY,indiaDay())}catch(e){}}
 setInterval(function(){rolloverCheck();if(pendingRollover()&&!quizVisible&&!one('.quiz-wrap')){try{sessionStorage.removeItem(ROLLOVER_KEY)}catch(e){};location.reload()}},30000);
 })();
 </script>
+<script>
+(function(){
+'use strict';
+var ROUTE_KEY='maths-ui-route-v1',MAX_WAIT=15000,started=Date.now(),guardActive=false;
+function readRoute(){try{var r=JSON.parse(localStorage.getItem(ROUTE_KEY)||'null');if(!r||r.type==='home')return null;return r}catch(e){return null}}
+function ready(){return typeof window.app!=='undefined'&&app.bootstrap&&String(app.bootstrap.chapterVisibilityVersion||'')==='v14'}
+function sameData(el,attr,value){return el&&String(el.getAttribute(attr)||'')===String(value||'')}
+function clickWhen(selector,attr,value,tries){tries=tries||30;var el=document.querySelector(selector);if(attr&&el&&!sameData(el,attr,value))el=null;if(!el&&attr){var all=document.querySelectorAll(selector);for(var i=0;i<all.length;i++){if(sameData(all[i],attr,value)){el=all[i];break}}}if(el){el.click();return true}if(tries>0)setTimeout(function(){clickWhen(selector,attr,value,tries-1)},100);return false}
+function restore(r){if(!r)return false;try{
+  if(r.type==='quiz'&&r.sessionId&&typeof server==='function'){server('resumeSession',r.sessionId).then(function(x){if(x&&x.ok!==false&&window.openQuiz)window.openQuiz(x)}).catch(function(){});return true}
+  if(r.type==='view'){if(r.view==='chapters'&&window.chapters){window.chapters();return true}if(r.view==='library'&&window.library){window.library();return true}if(r.view==='ondemand'&&window.ondemand){window.ondemand();return true}if(r.view==='progress'&&window.progress){window.progress();return true}}
+  if(r.type==='group'&&window.openStudyGroup){window.openStudyGroup(r.key);return true}
+  if(r.type==='chapter'&&window.openChapterHub){window.openChapterHub(r.chapter);return true}
+  if(r.type==='topic'&&window.openTopicHub){window.openTopicHub(r.chapter,r.key);return true}
+  if(r.type==='new'&&window.openGlobalNewV3){window.openGlobalNewV3();return true}
+  if(r.type==='newChapter'&&window.openGlobalNewV3){window.openGlobalNewV3();clickWhen('[data-ma-newch]','data-ma-newch',r.chapter);return true}
+  if(r.type==='starred'&&window.openStarredRevisionV3){window.openStarredRevisionV3();return true}
+  if(r.type==='concepts'&&window.openConceptsV4){window.openConceptsV4();return true}
+  if(r.type==='conceptChapter'&&window.openConceptsV4){window.openConceptsV4();clickWhen('[data-ma-conch]','data-ma-conch',r.chapter);return true}
+  if(r.type==='mocks'&&window.openMathsMocksV10){window.openMathsMocksV10();return true}
+  if(r.type==='mockChapter'&&window.openMathsMocksV10){window.openMathsMocksV10();clickWhen('[data-mm-ch]','data-mm-ch',r.chapter);return true}
+}catch(e){}return false}
+function installGuard(){var saved=readRoute();if(!saved)return;guardActive=true;
+  var baseSet=window.setView;if(typeof baseSet==='function'&&!baseSet.__firstRefreshGuard){var f=function(v){if(v==='home'&&guardActive&&readRoute())return;return baseSet.apply(this,arguments)};f.__firstRefreshGuard=true;window.setView=f}
+  var baseShow=window.showView;if(typeof baseShow==='function'&&!baseShow.__firstRefreshGuard){var g=function(v){if(v==='home'&&guardActive&&readRoute())return;return baseShow.apply(this,arguments)};g.__firstRefreshGuard=true;window.showView=g}
+  var baseHome=window.home;if(typeof baseHome==='function'&&!baseHome.__firstRefreshGuard){var h=function(){if(guardActive&&readRoute())return;return baseHome.apply(this,arguments)};h.__firstRefreshGuard=true;window.home=h}
+  (function wait(){var r=readRoute();if(!r){guardActive=false;return}if(ready()){restore(r);guardActive=false;return}if(Date.now()-started<MAX_WAIT)return setTimeout(wait,100);guardActive=false})();
+}
+document.addEventListener('click',function(ev){var x=ev.target&&ev.target.closest?ev.target.closest('#nav button[data-view="home"]'):null;if(x)guardActive=false},true);
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',installGuard,{once:true});else installGuard();
+})();
+</script>
