@@ -38,6 +38,10 @@ jobs:
           R=MathsFinalizationUIV12.html
           grep -Fq "MAX_WAIT=15000" "$R"
           grep -Fq "__firstRefreshGuard" "$R"
-          grep -Fq "if(v==='home'&&guardActive&&readRoute())return" "$R"
-          grep -Fq "if(guardActive&&readRoute())return" "$R"
+          grep -Fq "function preserveRoute" "$R"
+          grep -Fq "if(!r)r=preserveRoute(saved)" "$R"
+          grep -Fq "var isQuiz=r&&r.type==='quiz'" "$R"
+          grep -Fq "guardActive=false}).catch(function(){guardActive=false})" "$R"
+          grep -Fq "if(v==='home'&&guardActive)return" "$R"
+          grep -Fq "if(guardActive)return" "$R"
           grep -Fq "document.addEventListener('DOMContentLoaded',installGuard" "$R"
