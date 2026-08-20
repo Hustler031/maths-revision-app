@@ -44,3 +44,4 @@ jobs:
           git add Index.html .github/workflows/route-persistence-contract.yml
           git commit -m 'Stop legacy bootstrap from forcing Home'
           git push origin HEAD:agent/remove-legacy-home-redirect
+# trigger
