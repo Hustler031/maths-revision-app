@@ -8,6 +8,7 @@ replacements = [
     ('.app{width:100%;max-width:820px;', '.app{max-width:820px;'),
     ('.nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:820px;', '.nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(820px,100%);'),
     ('.quiz-dock{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:100%;max-width:820px;', '.quiz-dock{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:min(820px,100%);'),
+    ("try{app.bootstrap=await server('getAppBootstrap');loading(false);showView('home')}", "try{app.bootstrap=await server('getAppBootstrap');loading(false)}"),
 ]
 for old, new in replacements:
     s = s.replace(old, new)
