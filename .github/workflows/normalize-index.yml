@@ -2,10 +2,9 @@ name: Normalize Maths mobile shell
 
 on:
   push:
-    branches: [main]
+    branches: [agent/academic-practice-whitelist]
     paths:
-      - 'scripts/normalize_index.py'
-  workflow_dispatch:
+      - '.github/workflows/normalize-index.yml'
 
 permissions:
   contents: write
@@ -15,16 +14,32 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Restore known-good mobile shell only
-        run: python scripts/normalize_index.py
-      - name: Commit source normalization
+        with:
+          ref: agent/academic-practice-whitelist
+      - name: Apply academic whitelist patch
+        shell: bash
         run: |
-          if git diff --quiet -- Index.html; then
-            echo 'Index.html already normalized.'
-            exit 0
-          fi
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('MathsAcademicEligibilityV14.gs'); s=p.read_text()
+          s=s.replace("const MATHS_ACADEMIC_ELIGIBILITY_VERSION='v14';","const MATHS_ACADEMIC_ELIGIBILITY_VERSION='v15';")
+          old="const id=String(q.question_id||'').trim(),chapter=normalizeLabel_(q.chapter||''),topic=normalizeLabel_(q.topic||''),type=normalizeLabel_(q.card_type||''),template=String(q.template_group||'').trim().toUpperCase();\n  if(!id||!chapter)return false;"
+          new="const id=String(q.question_id||'').trim(),chapter=normalizeLabel_(q.chapter||''),topic=normalizeLabel_(q.topic||''),type=normalizeLabel_(q.card_type||''),template=String(q.template_group||'').trim().toUpperCase(),bank=normalizeLabel_(q.practice_bank||'');\n  if(!id||!chapter)return false;\n  // Positive inclusion: only explicitly ACADEMIC rows may enter normal chapter practice.\n  if(bank!=='academic')return false;"
+          if old not in s: raise SystemExit('eligibility insertion point missing')
+          s=s.replace(old,new).replace("mathsCacheKeyV9_('progress-academic-v14')","mathsCacheKeyV9_('progress-academic-v15')")
+          p.write_text(s)
+          p=Path('CompletePracticeUI.gs'); s=p.read_text()
+          s=s.replace('academic-v14-cache1','academic-v15-cache1').replace("ACADEMIC_COMPAT='v14'","ACADEMIC_COMPAT='v15'").replace("chapterVisibilityVersion||'')==='v14'","chapterVisibilityVersion||'')==='v15'").replace('pre-V14','pre-V15')
+          p.write_text(s)
+          for name in ['.github/workflows/focused-practice-contract.yml','.github/workflows/cache-compat-contract.yml','.github/workflows/route-persistence-contract.yml']:
+              p=Path(name); s=p.read_text().replace('academic-v14-cache1','academic-v15-cache1').replace("MATHS_ACADEMIC_ELIGIBILITY_VERSION='v14'","MATHS_ACADEMIC_ELIGIBILITY_VERSION='v15'").replace("chapterVisibilityVersion||'')==='v14'","chapterVisibilityVersion||'')==='v15'"); p.write_text(s)
+          p=Path('.github/workflows/focused-practice-contract.yml'); s=p.read_text(); marker="grep -Fq \"const MATHS_ACADEMIC_ELIGIBILITY_VERSION='v15'\" \"$F\"\n"; extra="          grep -Fq \"bank=normalizeLabel_(q.practice_bank||'')\" \"$F\"\n          grep -Fq \"if(bank!=='academic')return false\" \"$F\"\n"; s=s.replace(marker,marker+extra) if extra.strip() not in s else s; p.write_text(s)
+          PY
+      - name: Commit whitelist patch
+        shell: bash
+        run: |
           git config user.name 'maths-revision-bot'
           git config user.email 'actions@users.noreply.github.com'
-          git add Index.html
-          git commit -m 'Restore known-good mobile shell in Index.html'
-          git push
+          git add MathsAcademicEligibilityV14.gs CompletePracticeUI.gs .github/workflows/focused-practice-contract.yml .github/workflows/cache-compat-contract.yml .github/workflows/route-persistence-contract.yml
+          git commit -m 'Use explicit academic practice whitelist'
+          git push origin HEAD:agent/academic-practice-whitelist
