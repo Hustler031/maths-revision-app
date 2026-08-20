@@ -5,11 +5,13 @@ on:
     branches: [main]
     paths:
       - 'CompletePracticeUI.gs'
+      - 'MathsFinalizationUIV12.html'
       - '.github/workflows/route-persistence-contract.yml'
   push:
     branches: [main]
     paths:
       - 'CompletePracticeUI.gs'
+      - 'MathsFinalizationUIV12.html'
       - '.github/workflows/route-persistence-contract.yml'
 
 jobs:
@@ -33,3 +35,9 @@ jobs:
           grep -Fq "type:'newChapter'" "$F"
           grep -Fq "originalShowView" "$F"
           if grep -Fq "localStorage.setItem(ROUTE_KEY,JSON.stringify({questions:" "$F"; then echo 'Quiz payload must not be cached in route state'; exit 1; fi
+          R=MathsFinalizationUIV12.html
+          grep -Fq "MAX_WAIT=15000" "$R"
+          grep -Fq "__firstRefreshGuard" "$R"
+          grep -Fq "if(v==='home'&&guardActive&&readRoute())return" "$R"
+          grep -Fq "if(guardActive&&readRoute())return" "$R"
+          grep -Fq "document.addEventListener('DOMContentLoaded',installGuard" "$R"
