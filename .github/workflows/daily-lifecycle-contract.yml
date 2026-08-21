@@ -1,0 +1,18 @@
+name: Daily lifecycle contract
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify Daily lifecycle protections
+        run: |
+          grep -Fq "function mathsDailyEligibleV12_(){return mathsAcademicQuestionsV14_()}" MathsDailyV12.gs
+          grep -Fq "if(normalizeLabel_(session.mode)==='daily')" Code.gs
+          grep -Fq "mathsSessionAttemptCountV12_(id)" Code.gs
+          grep -Fq "dailyLifecycleFixUi_()" Code.gs
+          grep -Fq "current._revealed&&!current._attemptSaved" DailyLifecycleFixUI.html
+          grep -Fq "fn==='finishSession'&&r&&r.ok===false" DailyLifecycleFixUI.html
