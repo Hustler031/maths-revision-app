@@ -1,0 +1,31 @@
+<script>
+(function(){
+'use strict';
+var baseServer=window.server;
+if(typeof baseServer==='function'&&!baseServer.__dailyLifecycleGuard){
+  var guarded=function(fn){var args=Array.prototype.slice.call(arguments,1);return baseServer.apply(this,[fn].concat(args)).then(function(r){if(fn==='finishSession'&&r&&r.ok===false)throw new Error(r.message||'Daily is not fully saved yet.');return r})};
+  guarded.__dailyLifecycleGuard=true;
+  window.server=guarded;
+}
+var baseComplete=window.completeQuiz;
+if(typeof baseComplete==='function'&&!baseComplete.__dailyLifecycleGuard){
+  var wrapped=async function(){
+    if(!window.app||!app.quiz)return baseComplete.apply(this,arguments);
+    var q=app.quiz.questions&&app.quiz.questions[app.quiz.index];
+    if(q&&q._revealed&&!q._attemptSaved&&typeof window.saveAttempt==='function'){
+      var result=q.answerMode==='MCQ'?(q._selected===q.correctOption?'correct':'wrong'):'seen';
+      await window.saveAttempt(q,result);
+    }
+    try{if(typeof pendingAttemptSave!=='undefined')await pendingAttemptSave}catch(e){
+      if(q&&q._revealed&&!q._attemptSaved&&typeof window.saveAttempt==='function'){
+        var retry=q.answerMode==='MCQ'?(q._selected===q.correctOption?'correct':'wrong'):'seen';
+        await window.saveAttempt(q,retry);
+      }else throw e;
+    }
+    return baseComplete.apply(this,arguments);
+  };
+  wrapped.__dailyLifecycleGuard=true;
+  window.completeQuiz=wrapped;
+}
+})();
+</script>

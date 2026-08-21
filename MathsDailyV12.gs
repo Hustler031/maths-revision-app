@@ -57,7 +57,7 @@ function mathsIsDailyQuestionV12_(q,ctx){
 }
 
 function mathsDailyContextV12_(){return {calcIds:mathsCalculationIdsV12_(),mockIds:mathsMockIdsV12_(),lectureChapters:mathsDailyLectureChapterNamesV12_()}}
-function mathsDailyEligibleV12_(){const ctx=mathsDailyContextV12_();return getAllQuestions_().filter(q=>mathsIsDailyQuestionV12_(q,ctx))}
+function mathsDailyEligibleV12_(){return mathsAcademicQuestionsV14_()}
 
 function mathsDailySessionsV12_(){
   return sheetObjects_(getSheet_(MATHS.SHEETS.SESSIONS)).filter(r=>normalizeLabel_(r.mode)==='daily').map(r=>{
