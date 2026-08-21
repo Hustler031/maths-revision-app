@@ -1,0 +1,84 @@
+name: Diagnose Apps Script Deployment
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/deploy-diagnostic.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  diagnose-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Validate deployment secrets
+        id: secrets
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+          CLASP_JSON: ${{ secrets.CLASP_JSON }}
+          DEPLOYMENT_ID: ${{ secrets.DEPLOYMENT_ID }}
+        shell: bash
+        run: |
+          test -n "$CLASPRC_JSON" || { echo 'Missing CLASPRC_JSON secret'; exit 1; }
+          test -n "$CLASP_JSON" || { echo 'Missing CLASP_JSON secret'; exit 1; }
+          test -n "$DEPLOYMENT_ID" || { echo 'Missing DEPLOYMENT_ID secret'; exit 1; }
+
+      - name: Configure clasp authentication
+        id: auth
+        if: success()
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+          CLASP_JSON: ${{ secrets.CLASP_JSON }}
+        shell: bash
+        run: |
+          printf '%s' "$CLASPRC_JSON" > "$HOME/.clasprc.json"
+          printf '%s' "$CLASP_JSON" > .clasp.json
+          node -e "JSON.parse(require('fs').readFileSync(process.env.HOME+'/.clasprc.json','utf8')); JSON.parse(require('fs').readFileSync('.clasp.json','utf8'));"
+
+      - name: Push source to Apps Script
+        id: clasp_push
+        if: success()
+        shell: bash
+        run: npx --yes @google/clasp@3.3.0 push --force
+
+      - name: Update existing web-app deployment
+        id: web_deploy
+        if: success()
+        env:
+          DEPLOYMENT_ID: ${{ secrets.DEPLOYMENT_ID }}
+        shell: bash
+        run: npx --yes @google/clasp@3.3.0 create-deployment --deploymentId "$DEPLOYMENT_ID" --description "Diagnostic GitHub $(git rev-parse --short HEAD)"
+
+      - name: Record successful deployment
+        if: success()
+        shell: bash
+        run: |
+          printf 'commit=%s\ndeployed_at=%s\nstatus=success\n' "$GITHUB_SHA" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > DEPLOYMENT_STATUS.txt
+          printf 'commit=%s\nstatus=success\nstage=complete\nrun_id=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > DEPLOYMENT_DIAGNOSTIC.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add DEPLOYMENT_STATUS.txt DEPLOYMENT_DIAGNOSTIC.txt
+          git commit -m "Record diagnostic Apps Script deployment ${GITHUB_SHA::7}" || exit 0
+          git push
+
+      - name: Record deployment failure stage
+        if: failure()
+        shell: bash
+        run: |
+          printf 'commit=%s\nstatus=failure\nrun_id=%s\nsecrets=%s\nauth=%s\nclasp_push=%s\nweb_deploy=%s\n' \
+            "$GITHUB_SHA" "$GITHUB_RUN_ID" \
+            "${{ steps.secrets.outcome }}" \
+            "${{ steps.auth.outcome }}" \
+            "${{ steps.clasp_push.outcome }}" \
+            "${{ steps.web_deploy.outcome }}" > DEPLOYMENT_DIAGNOSTIC.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add DEPLOYMENT_DIAGNOSTIC.txt
+          git commit -m "Record Apps Script deployment failure stage ${GITHUB_SHA::7}" || exit 0
+          git push || true
