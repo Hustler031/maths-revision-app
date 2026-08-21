@@ -4,6 +4,7 @@ on:
     paths:
       - 'Code.gs'
       - 'MathsDailyV12.gs'
+      - 'MathsQuizUI.html'
       - 'DailyLifecycleFixUI.html'
       - '.github/workflows/daily-lifecycle-contract.yml'
   push:
@@ -11,6 +12,7 @@ on:
     paths:
       - 'Code.gs'
       - 'MathsDailyV12.gs'
+      - 'MathsQuizUI.html'
       - 'DailyLifecycleFixUI.html'
       - '.github/workflows/daily-lifecycle-contract.yml'
 jobs:
@@ -24,7 +26,8 @@ jobs:
           grep -Fq "function mathsDailyEligibleV12_(){return mathsAcademicQuestionsV14_()}" MathsDailyV12.gs
           grep -Fq "if(normalizeLabel_(session.mode)==='daily')" Code.gs
           grep -Fq "mathsSessionAttemptCountV12_(id)" Code.gs
-          grep -Fq "dailyLifecycleFixUi_()" Code.gs
-          grep -Fq "q._attemptSavePromise" DailyLifecycleFixUI.html
-          grep -Fq "getSessionAttemptMapV3" DailyLifecycleFixUI.html
-          grep -Fq "fn==='finishSession'&&r&&r.ok===false" DailyLifecycleFixUI.html
+          grep -Fq "name==='recall'" MathsQuizUI.html
+          grep -Fq "saveConfirmed" MathsQuizUI.html
+          grep -Fq "unresolvedIndexes" MathsQuizUI.html
+          grep -Fq "Q'+(target+1)+' was not saved" MathsQuizUI.html
+          grep -Fq "Compatibility placeholder only" DailyLifecycleFixUI.html
