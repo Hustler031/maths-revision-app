@@ -1,0 +1,95 @@
+name: Apply Daily lifecycle hardening
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/apply-daily-lifecycle-hardening.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  harden:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply guarded Daily lifecycle fixes
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          # 1) Daily + Practice More: positive academic whitelist only.
+          p=Path('MathsDailyV12.gs')
+          s=p.read_text(encoding='utf-8')
+          old="function mathsDailyEligibleV12_(){const ctx=mathsDailyContextV12_();return getAllQuestions_().filter(q=>mathsIsDailyQuestionV12_(q,ctx))}"
+          new="function mathsDailyEligibleV12_(){return mathsAcademicQuestionsV14_()}"
+          if s.count(old)!=1:
+              raise SystemExit(f'Daily eligibility marker mismatch: {s.count(old)}')
+          s=s.replace(old,new,1)
+          p.write_text(s,encoding='utf-8')
+
+          # 2) Backend: a Daily session cannot be completed until every session question has a unique attempt.
+          p=Path('Code.gs')
+          s=p.read_text(encoding='utf-8')
+          old="function finishSession(sessionId){ensureMathsInfrastructure_();updateSessionProgress_(String(sessionId||''),999999,true);bumpMathsVersionV9_();return mathsDashboardV9_();}"
+          new="function finishSession(sessionId){ensureMathsInfrastructure_();const id=String(sessionId||''),session=getSessionById_(id);if(!session)return {ok:false,message:'Session not found.'};if(normalizeLabel_(session.mode)==='daily'){const target=json_(session.question_ids_json,[]).map(String).filter(Boolean).length,done=mathsSessionAttemptCountV12_(id);if(done<target){updateSessionProgress_(id,Math.max(0,done),false);return {ok:false,incomplete:true,done:done,target:target,message:'Daily is '+done+'/'+target+'. Finish after every question is saved.'};}}updateSessionProgress_(id,999999,true);bumpMathsVersionV9_();return {ok:true,dashboard:mathsDashboardV9_()};}"
+          if s.count(old)!=1:
+              raise SystemExit(f'finishSession marker mismatch: {s.count(old)}')
+          s=s.replace(old,new,1)
+          p.write_text(s,encoding='utf-8')
+
+          # 3) Frontend: retry a failed current answer before Finish, await it, and honor backend completion rejection.
+          p=Path('Index.html')
+          s=p.read_text(encoding='utf-8')
+          old="""async function completeQuiz(){
+  if(!app.quiz)return;
+  const id=app.quiz.sessionId,chapter=app.quiz.planChapter||app.bootstrap.dashboard.todayChapter,mode=app.quiz.mode;
+  if(typeof loading==='function')loading(true);
+  try{
+    await pendingAttemptSave;
+    await server('finishSession',id);
+    app.bootstrap=await server('getAppBootstrap');
+  }catch(e){
+    if(typeof loading==='function')loading(false);
+    toast('Last answer is not saved yet. Please retry Finish.');
+    return;
+  }
+  if(typeof loading==='function')loading(false);
+  $('#nav').classList.remove('hidden');
+  $('#main').innerHTML=`<div class=\"content\"><div class=\"card\" style=\"text-align:center\"><div style=\"font-size:36px\">✓</div><h2>Session complete</h2>${mode==='daily'?`<button class=\"btn primary\" style=\"width:100%\" data-chapter=\"${esc(chapter)}\" onclick=\"beginQuiz('practice_more',{chapter:this.dataset.chapter})\">+ Practice More ${esc(chapter)}</button><div style=\"height:8px\"></div>`:''}<button class=\"btn ghost\" style=\"width:100%\" onclick=\"showView('home')\">Back Home</button></div></div>`;
+}"""
+          new="""async function completeQuiz(){
+  if(!app.quiz)return;
+  const id=app.quiz.sessionId,chapter=app.quiz.planChapter||app.bootstrap.dashboard.todayChapter,mode=app.quiz.mode,current=app.quiz.questions&&app.quiz.questions[app.quiz.index];
+  if(typeof loading==='function')loading(true);
+  try{
+    if(current&&current._revealed&&!current._attemptSaved){const retryResult=current.answerMode==='MCQ'?(current._selected===current.correctOption?'correct':'wrong'):'seen';await saveAttempt(current,retryResult)}
+    await pendingAttemptSave;
+    const finished=await server('finishSession',id);
+    if(finished&&finished.ok===false)throw new Error(finished.message||'Daily is not fully saved yet.');
+    app.bootstrap=await server('getAppBootstrap');
+  }catch(e){
+    if(typeof loading==='function')loading(false);
+    toast(e&&e.message?e.message:'Last answer is not saved yet. Please retry Finish.');
+    return;
+  }
+  if(typeof loading==='function')loading(false);
+  $('#nav').classList.remove('hidden');
+  $('#main').innerHTML=`<div class=\"content\"><div class=\"card\" style=\"text-align:center\"><div style=\"font-size:36px\">✓</div><h2>Session complete</h2>${mode==='daily'?`<button class=\"btn primary\" style=\"width:100%\" data-chapter=\"${esc(chapter)}\" onclick=\"beginQuiz('practice_more',{chapter:this.dataset.chapter})\">+ Practice More ${esc(chapter)}</button><div style=\"height:8px\"></div>`:''}<button class=\"btn ghost\" style=\"width:100%\" onclick=\"showView('home')\">Back Home</button></div></div>`;
+}"""
+          if s.count(old)!=1:
+              raise SystemExit(f'completeQuiz marker mismatch: {s.count(old)}')
+          s=s.replace(old,new,1)
+          p.write_text(s,encoding='utf-8')
+
+          # Regression contract: all three protections must remain present.
+          p=Path('.github/workflows/daily-lifecycle-contract.yml')
+          p.write_text("""name: Daily lifecycle contract\non:\n  pull_request:\n  push:\n    branches: [main]\njobs:\n  contract:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - name: Verify Daily lifecycle protections\n        run: |\n          grep -Fq \"function mathsDailyEligibleV12_(){return mathsAcademicQuestionsV14_()}\" MathsDailyV12.gs\n          grep -Fq \"if(normalizeLabel_(session.mode)==='daily')\" Code.gs\n          grep -Fq \"mathsSessionAttemptCountV12_(id)\" Code.gs\n          grep -Fq \"if(finished&&finished.ok===false)\" Index.html\n          grep -Fq \"current&&current._revealed&&!current._attemptSaved\" Index.html\n""",encoding='utf-8')
+          PY
+          git config user.name 'maths-revision-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add MathsDailyV12.gs Code.gs Index.html .github/workflows/daily-lifecycle-contract.yml
+          git commit -m 'Harden Daily completion and academic isolation'
+          git push
