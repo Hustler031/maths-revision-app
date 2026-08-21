@@ -1,4 +1,55 @@
 <script>
-/* Compatibility placeholder only. Quiz persistence now lives in MathsQuizUI.html,
-   the single active quiz interaction layer. Intentionally no runtime wrappers here. */
+/* Home progress reconciliation only. Quiz persistence remains in MathsQuizUI.html.
+   This mirrors the English app's explicit dashboard refresh after returning home. */
+(function(){
+'use strict';
+var baseHome=window.home;
+var refreshSeq=0;
+function patchDailyCard(d){
+  if(!d||!d.daily)return;
+  var goal=document.querySelector('.ma-goal b');
+  var bar=document.querySelector('.ma-track i');
+  var btn=document.querySelector('#maDaily');
+  if(!goal||!bar||!btn)return;
+  var target=Math.max(1,Number(d.daily.target||20));
+  var done=Math.max(0,Math.min(target,Number(d.daily.done||0)));
+  var left=Math.max(0,target-done);
+  goal.textContent=done+' / '+target;
+  bar.style.width=Math.round(done*100/target)+'%';
+  if(d.daily.completed){btn.textContent='Practice More';}
+  else if(done>0){btn.textContent='Continue Day '+Number((d.schedule&&d.schedule.day)||1)+' · '+left+' left';}
+  else{btn.textContent='Start Day '+Number((d.schedule&&d.schedule.day)||1)+' · '+left+' left';}
+}
+function fetchFreshHome(){
+  if(typeof app==='undefined'||app.view!=='home')return;
+  var seq=++refreshSeq;
+  try{
+    google.script.run.withSuccessHandler(function(d){
+      if(seq<refreshSeq||typeof app==='undefined'||app.view!=='home')return;
+      patchDailyCard(d);
+    }).withFailureHandler(function(){}).getMathsHomeV14();
+  }catch(e){}
+}
+function burstFreshHome(){
+  fetchFreshHome();
+  setTimeout(fetchFreshHome,700);
+  setTimeout(fetchFreshHome,1800);
+}
+if(typeof baseHome==='function'){
+  window.home=function(){
+    var out=baseHome.apply(this,arguments);
+    setTimeout(burstFreshHome,0);
+    return out;
+  };
+}
+window.addEventListener('maths:attempt-saved',function(){
+  if(typeof app!=='undefined'&&app.view==='home')setTimeout(burstFreshHome,0);
+});
+window.addEventListener('focus',function(){
+  if(typeof app!=='undefined'&&app.view==='home')fetchFreshHome();
+});
+document.addEventListener('visibilitychange',function(){
+  if(!document.hidden&&typeof app!=='undefined'&&app.view==='home')fetchFreshHome();
+});
+})();
 </script>
