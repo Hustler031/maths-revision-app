@@ -84,7 +84,6 @@ jobs:
           s=s.replace(old,new,1)
           p.write_text(s,encoding='utf-8')
 
-          # Regression contract: all three protections must remain present.
           p=Path('.github/workflows/daily-lifecycle-contract.yml')
           p.write_text("""name: Daily lifecycle contract\non:\n  pull_request:\n  push:\n    branches: [main]\njobs:\n  contract:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - name: Verify Daily lifecycle protections\n        run: |\n          grep -Fq \"function mathsDailyEligibleV12_(){return mathsAcademicQuestionsV14_()}\" MathsDailyV12.gs\n          grep -Fq \"if(normalizeLabel_(session.mode)==='daily')\" Code.gs\n          grep -Fq \"mathsSessionAttemptCountV12_(id)\" Code.gs\n          grep -Fq \"if(finished&&finished.ok===false)\" Index.html\n          grep -Fq \"current&&current._revealed&&!current._attemptSaved\" Index.html\n""",encoding='utf-8')
           PY
@@ -93,3 +92,5 @@ jobs:
           git add MathsDailyV12.gs Code.gs Index.html .github/workflows/daily-lifecycle-contract.yml
           git commit -m 'Harden Daily completion and academic isolation'
           git push
+
+# trigger
