@@ -144,3 +144,5 @@ jobs:
           git add DEPLOYMENT_STATUS.txt
           git commit -m "Record verified Apps Script deployment ${GITHUB_SHA::7}" || exit 0
           git push
+
+# force-deploy-daily-lifecycle-2026-08-21
