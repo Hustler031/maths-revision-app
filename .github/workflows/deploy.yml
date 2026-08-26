@@ -145,7 +145,7 @@ jobs:
         run: npx --yes @google/clasp@3.3.0 deploy --deploymentId "$DEPLOYMENT_ID" --description "GitHub $(git rev-parse --short HEAD)"
       - name: Verify the public web app serves this build
         env:
-          LIVE_URL: https://script.google.com/macros/s/AKfycbxBMY5zkkvM8Y9SMc3Eg0HRZ-nwF6odQ2OSqEkknTcTK103iEsjoTjGbej5F9OL2DjO/exec
+          LIVE_URL: https://script.google.com/macros/s/AKfycbyrHaXyBS-T9J_wb1ohMFF5u2BwZByzGrVlP2crQHI/exec
         run: |
           npx --yes @google/clasp@3.3.0 deployments
           for attempt in 1 2 3 4 5 6; do
