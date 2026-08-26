@@ -1,12 +1,36 @@
-const CALC_SPEED_VERSION='v19';
+const CALC_SPEED_VERSION='v20';
 function calcSpeedPoolsV19_(){
   const all=getAllQuestions_().concat(getGeneratedQuestions_()).filter(active_);
   const seen={};return all.filter(q=>{const id=String(q.question_id||'');if(!id||seen[id])return false;seen[id]=true;const bank=String(q.practice_bank||'').toUpperCase(),ch=String(q.chapter||'').toLowerCase();return bank==='CALCULATION'||ch==='calculation training'||ch==='calculation memory'});
 }
-function calcSpeedTypeV19_(q){const ch=String(q.chapter||'').toLowerCase(),ct=String(q.card_type||'').toLowerCase(),tg=String(q.template_group||'').toLowerCase(),vt=String(q.variant_types||'').toLowerCase();if(ch==='calculation memory'||ct==='memory'||/square_|cube_|table_|fraction_percent|power_|root_|triplet_/.test(tg))return'MEMORY';if(ct==='concept'||ct==='formula'||/method|shortcut|rule/.test(ct))return'METHOD';if(/pdf drill|class practice|homework practice/.test(String(q.source_file||'').toLowerCase())||/drill/.test(vt))return'DRILL';return'DRILL'}
+function calcSpeedTypeV19_(q){
+  const ch=String(q.chapter||'').toLowerCase(),ct=String(q.card_type||'').toLowerCase(),tg=String(q.template_group||'').toLowerCase(),vt=String(q.variant_types||'').toLowerCase(),src=String(q.source_file||'').toLowerCase();
+  if(ct==='drill'||/drill/.test(vt)||/pdf drill|class practice|homework practice/.test(src))return'DRILL';
+  if(ct==='method'||ct==='concept'||ct==='formula'||/method|shortcut|rule/.test(ct))return'METHOD';
+  if(ch==='calculation memory'||ct==='memory'||/^(square_\d+|cube_\d+|table_\d+|fraction_percent|power_|root_|triplet_)/.test(tg))return'MEMORY';
+  return'DRILL';
+}
 function calcSpeedSkillV19_(q){return String(q.topic||q.subtopic||'Mixed').trim()||'Mixed'}
-function calcSpeedHubV19(){ensureCalculationPdfV19_();const pool=calcSpeedPoolsV19_(),state=mathsStateMapV9_(),skills={};let memory=0,methods=0,drills=0,slow=0,wrong=0;pool.forEach(q=>{const t=calcSpeedTypeV19_(q),s=calcSpeedSkillV19_(q),st=state[String(q.question_id)]||{};(skills[s]||(skills[s]={skill:s,total:0,memory:0,methods:0,drills:0})).total++;if(t==='MEMORY'){memory++;skills[s].memory++}else if(t==='METHOD'){methods++;skills[s].methods++}else{drills++;skills[s].drills++}if(Number(st.last_response_sec||0)>=8)slow++;if(normalizeLabel_(st.last_result)==='wrong')wrong++});return {version:mathsVersionV9_(),moduleVersion:CALC_SPEED_VERSION,total:pool.length,memory,methods,drills,slow,wrong,skills:Object.keys(skills).sort().map(k=>skills[k])}}
-function calcSpeedFilterV19_(req){req=req||{};let pool=calcSpeedPoolsV19_(),type=String(req.type||'').toUpperCase(),skill=normalizeLabel_(req.skill||'');if(type)pool=pool.filter(q=>calcSpeedTypeV19_(q)===type);if(skill)pool=pool.filter(q=>normalizeLabel_(calcSpeedSkillV19_(q))===skill);return pool}
+function calcNumberFromPromptV20_(q){const m=String(q.prompt||'').match(/^\s*(\d+)\s*[²³]?\s*=/);return m?Number(m[1]):NaN}
+function calcTablePairV20_(q){const m=String(q.prompt||'').match(/^\s*(\d+)\s*[×xX*]\s*(\d+)\s*=/);return m?[Number(m[1]),Number(m[2])]:null}
+function calcRecallEligibleV20_(q){
+  if(calcSpeedTypeV19_(q)!=='MEMORY')return false;
+  const skill=normalizeLabel_(calcSpeedSkillV19_(q));
+  if(skill==='squares'){const n=calcNumberFromPromptV20_(q);return !isFinite(n)||n>=17}
+  if(skill==='cubes'){const n=calcNumberFromPromptV20_(q);return !isFinite(n)||n>=10}
+  if(skill==='tables'){
+    const p=calcTablePairV20_(q);if(!p)return false;const n=p[0],m=p[1];
+    if(n>=12&&n<=19)return m>=6&&m<=12;
+    if(n>=21&&n<=29)return m>=3&&m<=12;
+    if(n===30)return m>=1&&m<=5;
+    if(n>=31&&n<=40)return m>=1&&m<=3;
+    return false;
+  }
+  return true;
+}
+function calcUsablePoolV20_(){return calcSpeedPoolsV19_().filter(q=>calcSpeedTypeV19_(q)!=='MEMORY'||calcRecallEligibleV20_(q))}
+function calcSpeedHubV19(){const pool=calcUsablePoolV20_(),state=mathsStateMapV9_(),skills={};let memory=0,methods=0,drills=0,slow=0,wrong=0;pool.forEach(q=>{const t=calcSpeedTypeV19_(q),s=calcSpeedSkillV19_(q),st=state[String(q.question_id)]||{};(skills[s]||(skills[s]={skill:s,total:0,memory:0,methods:0,drills:0})).total++;if(t==='MEMORY'){memory++;skills[s].memory++}else if(t==='METHOD'){methods++;skills[s].methods++}else{drills++;skills[s].drills++}if(Number(st.last_response_sec||0)>=8)slow++;if(normalizeLabel_(st.last_result)==='wrong')wrong++});return {version:mathsVersionV9_(),moduleVersion:CALC_SPEED_VERSION,total:pool.length,memory,methods,drills,slow,wrong,skills:Object.keys(skills).sort().map(k=>skills[k])}}
+function calcSpeedFilterV19_(req){req=req||{};let pool=calcUsablePoolV20_(),type=String(req.type||'').toUpperCase(),skill=normalizeLabel_(req.skill||'');if(type)pool=pool.filter(q=>calcSpeedTypeV19_(q)===type);if(skill)pool=pool.filter(q=>normalizeLabel_(calcSpeedSkillV19_(q))===skill);return pool}
 function calcSpeedRankV19_(pool,state){return pool.slice().sort((a,b)=>{function sc(q){const s=state[String(q.question_id)]||{};let x=0;if(normalizeLabel_(s.last_result)==='wrong')x+=100000;if(bool_(s.difficult))x+=80000;const sec=Number(s.last_response_sec||0);if(sec>=8)x+=50000+Math.min(999,sec*10);if(Number(s.attempts||0)===0)x+=25000;return x}return sc(b)-sc(a)||String(a.question_id).localeCompare(String(b.question_id))})}
 function calcSpeedRecallPayloadV19_(payload){(payload.questions||[]).forEach(q=>{q.answerMode='REVEAL';q.options=[];q.correctOption='';q.variantType='CALC_RECALL'});return payload}
 function startCalculationSpeedV19(req){ensureMathsV3_();req=Object.assign({},req||{});const state=mathsStateMapV9_(),mode=String(req.mode||'mixed').toLowerCase(),count=Math.max(1,Math.min(100,Number(req.count||20)));let pool=calcSpeedFilterV19_(req),title='Calculation Training';if(mode==='weak'||mode==='slow')pool=calcSpeedRankV19_(pool,state);else pool=shuffle_(pool);if(mode!=='all')pool=pool.slice(0,count);if(!pool.length)return {ok:false,message:'No eligible calculation items found for this selection.'};const sessionId=Utilities.getUuid();title+=' · '+(mode==='recall'?'Recall':mode==='weak'||mode==='slow'?'Weak & Slow':req.skill||req.type||'Mixed Practice');let payload=sessionPayload_(sessionId,pool,state,title,'calculation_speed',0,null);if(mode==='recall')payload=calcSpeedRecallPayloadV19_(payload);else if(mode==='mixed'){(payload.questions||[]).forEach((x,i)=>{if(calcSpeedTypeV19_(pool[i])==='MEMORY'){x.answerMode='REVEAL';x.options=[];x.correctOption='';x.variantType='CALC_RECALL'}})}saveSession_({session_id:sessionId,mode:'calculation_speed',title,question_ids_json:JSON.stringify(pool.map(q=>q.question_id)),current_index:0,updated_at:new Date(),completed:false,params_json:JSON.stringify(req)});payload.calcMeta={isCalculationTraining:true,speedModule:true,mode};return payload}
