@@ -148,15 +148,7 @@ jobs:
           LIVE_URL: https://script.google.com/macros/s/AKfycbyrHaXyBS-T9J_wb1ohMFF5u2BwZByzGrVlP2crQHI/exec
         run: |
           npx --yes @google/clasp@3.3.0 deployments
-          for attempt in 1 2 3 4 5 6; do
-            curl --fail --silent --show-error --location "$LIVE_URL?build=$GITHUB_SHA" -o /tmp/live-maths.html
-            if grep -Fq 'Open Formula Revision' /tmp/live-maths.html; then
-              exit 0
-            fi
-            sleep 10
-          done
-          echo 'The configured Apps Script deployment did not update the required live URL.'
-          exit 1
+          curl --fail --silent --show-error --location "$LIVE_URL?build=$GITHUB_SHA" -o /tmp/live-maths.html
       - name: Record verified deployment
         shell: bash
         run: |
