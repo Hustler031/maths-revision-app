@@ -1,5 +1,7 @@
 const MATHS_DAILY_VERSION='v20';
-const MATHS_DAILY_DEFAULT_SIZE=MATHS_DAILY_SIZE_V20;
+// Apps Script evaluates source files in deployment order, so this must not depend
+// on a top-level constant declared in a separately ordered file.
+const MATHS_DAILY_DEFAULT_SIZE=25;
 
 function mathsStudyClockV12_(){
   const tz=studyTimezone_()||'Asia/Kolkata';

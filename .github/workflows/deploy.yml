@@ -25,6 +25,7 @@ jobs:
         run: |
           cat *.gs > /tmp/maths-server.js
           node --check /tmp/maths-server.js
+          node -e "const fs=require('fs'),vm=require('vm');vm.runInNewContext(fs.readFileSync('/tmp/maths-server.js','utf8'),{console})"
       - name: Validate active browser JavaScript including Index
         shell: bash
         run: |
