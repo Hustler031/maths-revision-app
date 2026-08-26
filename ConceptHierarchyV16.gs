@@ -66,6 +66,7 @@ function startConceptPracticeV16(request){
   if(kind==='all'){pool=shuffle_(pool);label='Practice All'}
   else if(kind==='new'){pool=mathsNewPoolV9_(pool,state).slice(0,count);label='New'}
   else if(kind==='weak'){pool=mathsWeakRankV9_(pool,state).slice(0,count);label='Weak'}
+  else if(kind==='hard'){pool=mathsHardRankV20_(pool,state,mathsAttemptProfileMapV20_(false)).slice(0,count);label='Hard'}
   else if(kind==='difficult'){pool=shuffle_(pool.filter(q=>bool_((state[String(q.question_id)]||{}).difficult)&&!isMastered_(state[String(q.question_id)]))).slice(0,count);label='Difficult'}
   else {pool=shuffle_(pool.filter(q=>!isMastered_(state[String(q.question_id)]))).slice(0,count);label='Random'}
   if(!pool.length)return {ok:false,message:'No eligible '+label.toLowerCase()+' concept questions found for this selection.'};

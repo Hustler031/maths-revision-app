@@ -17,18 +17,11 @@ function mathsV2Day_(){try{const x=getScheduledPlan_();if(x&&Number(x.day)>0)ret
 function logMathsV2Flag_(id,type,on,sessionId){const q=getAllQuestions_().concat(getGeneratedQuestions_()).find(x=>String(x.question_id)===String(id))||{};ensureMathsV2_().appendRow([String(id),new Date(),mathsV2Day_(),q.chapter||'',String(type),on?'ON':'OFF',String(sessionId||'')]);}
 
 function toggleImportantV2(questionId,sessionId){
-  const id=validQuestionId_(questionId),cur=getStateMap_()[id]||{},next=!isMarked_(cur),st=upsertState_(id,{marked:next});
-  logMathsV2Flag_(id,'IMPORTANT',next,sessionId);
-  return {ok:true,questionId:id,important:!!st.marked,difficult:isDifficultV2_(mathsV2StateMap_()[id])};
+  return toggleStarredV9(questionId,sessionId);
 }
 
 function toggleDifficultV2(questionId,sessionId){
-  const id=validQuestionId_(questionId);ensureMathsV2_();const sh=getSheet_(MATHS.SHEETS.STATE),headers=sh.getRange(1,1,1,sh.getLastColumn()).getValues()[0].map(key_),col=headers.indexOf('difficult')+1;
-  let rows=sheetObjects_(sh).filter(r=>String(r.question_id||'').trim()===id),current=rows.some(r=>isDifficultV2_(r)),next=!current;
-  if(!rows.length){upsertState_(id,{});rows=sheetObjects_(sh).filter(r=>String(r.question_id||'').trim()===id);}
-  rows.forEach(r=>sh.getRange(r.__row,col).setValue(next));
-  logMathsV2Flag_(id,'DIFFICULT',next,sessionId);
-  return {ok:true,questionId:id,important:isMarked_(getStateMap_()[id]),difficult:next};
+  return toggleDifficultV9(questionId,sessionId);
 }
 
 function scopePoolMathsV2_(request){
@@ -58,28 +51,11 @@ function resumeV2All_(request,state){
 }
 
 function startMathsV2Quiz(request){
-  ensureMathsV2_();request=request||{};const state=getStateMap_(),kind=String(request.kind||'random').toLowerCase(),count=Math.max(1,Math.min(100,Number(request.count||20)));
-  if(kind==='all'&&!request.restart){const resumed=resumeV2All_(request,state);if(resumed&&resumed.ok!==false)return resumed;}
-  let pool=scopePoolMathsV2_(request),label='Practice';
-  if(kind==='new'){pool=pool.filter(q=>Number((state[q.question_id]||{}).attempts||0)===0);label='New';}
-  else if(kind==='starred'||kind==='important'){pool=pool.filter(q=>isMarked_(state[q.question_id]));label='Starred';}
-  else if(kind==='difficult'){pool=pool.filter(q=>isDifficultV2_(state[q.question_id]));label='Difficult';}
-  else if(kind==='weak'){
-    pool=pool.filter(q=>!isMastered_(state[q.question_id]));
-    pool=pool.map(q=>{const s=state[q.question_id]||{},wrong=String(s.last_result||'').toLowerCase()==='wrong',slow=Number(s.last_response_sec||0)>=20,diff=isDifficultV2_(s),attempts=Number(s.attempts||0);return {q,score:(diff?50:0)+(wrong?30:0)+(slow?12:0)+Math.min(attempts,6)+(attempts===0?2:0)}}).sort((a,b)=>b.score-a.score).map(x=>x.q);label='Weak';
-  }
-  else if(kind==='all'){label='Practice All';}
-  else {pool=pool.filter(q=>!isMastered_(state[q.question_id]));pool=shuffle_(pool);label='Random';}
-  if(kind!=='all'&&kind!=='weak')pool=shuffle_(pool);
-  if(kind!=='all')pool=pool.slice(0,Math.min(count,pool.length));
-  if(!pool.length)return {ok:false,message:'No eligible '+label.toLowerCase()+' questions found for this selection.'};
-  const titleBase=String(request.title||request.majorTopic||request.chapter||request.groupName||'Maths'),title=titleBase+' · '+label,sessionId=Utilities.getUuid(),mode='v2_'+kind,payload=enhanceV2Payload_(sessionPayload_(sessionId,pool,state,title,mode,0,null),state);
-  saveSession_({session_id:sessionId,mode,title,question_ids_json:JSON.stringify(pool.map(q=>q.question_id)),current_index:0,updated_at:new Date(),completed:false,params_json:JSON.stringify(request)});
-  return payload;
+  return startMathsPracticeV14(request||{});
 }
 
 function getSessionAttemptMapV2(sessionId){
-  const out={};sheetObjects_(getSheet_(MATHS.SHEETS.ATTEMPTS)).filter(r=>String(r.session_id||'')===String(sessionId||'')).forEach(r=>{const id=String(r.question_id||'');if(!id)return;const v=String(r.result||'').toLowerCase();out[id]=v==='correct'?'correct':v==='wrong'?'wrong':'seen';});return out;
+  return getSessionAttemptMapV3(sessionId);
 }
 
 function mathsProgressMetricV2_(questions,state){

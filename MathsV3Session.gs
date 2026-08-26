@@ -1,7 +1,8 @@
 function saveSessionPositionV3(sessionId,index){
   ensureMathsInfrastructure_();
-  const id=String(sessionId||'').trim();
-  if(!id)throw new Error('Missing session ID.');
-  updateSessionProgress_(id,Math.max(0,Number(index||0)),false);
-  return {ok:true,sessionId:id,currentIndex:Math.max(0,Number(index||0))};
+  return mathsLockedV9_(()=>{const ctx=mathsRequireSessionV20_(sessionId),safe=Math.max(0,Math.min(ctx.ids.length-1,Number(index||0)));
+    if(bool_(ctx.row.completed))return {ok:true,sessionId:ctx.id,currentIndex:safe,completed:true};
+    updateSessionProgress_(ctx.id,safe,false);
+    return {ok:true,sessionId:ctx.id,currentIndex:safe};
+  });
 }

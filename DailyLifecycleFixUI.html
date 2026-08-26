@@ -11,7 +11,7 @@ function patchDailyCard(d){
   var bar=document.querySelector('.ma-track i');
   var btn=document.querySelector('#maDaily');
   if(!goal||!bar||!btn)return;
-  var target=Math.max(1,Number(d.daily.target||20));
+  var target=Math.max(1,Number(d.daily.target||25));
   var done=Math.max(0,Math.min(target,Number(d.daily.done||0)));
   var left=Math.max(0,target-done);
   goal.textContent=done+' / '+target;

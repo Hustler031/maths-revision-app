@@ -8,6 +8,7 @@ on:
       - 'MathsMocksV10.gs'
       - 'MathsMocksUI.html'
       - 'MathsAcademicEligibilityV14.gs'
+      - 'MathsColdStartRepairUI.html'
       - '.github/workflows/cache-compat-contract.yml'
   push:
     branches: [main]
@@ -16,6 +17,7 @@ on:
       - 'MathsMocksV10.gs'
       - 'MathsMocksUI.html'
       - 'MathsAcademicEligibilityV14.gs'
+      - 'MathsColdStartRepairUI.html'
       - '.github/workflows/cache-compat-contract.yml'
 
 jobs:
@@ -36,7 +38,7 @@ jobs:
         run: |
           set -e
           F=CompletePracticeUI.gs
-          grep -Fq "CACHE_SCHEMA='academic-v14-cache1'" "$F"
+          grep -Fq "CACHE_SCHEMA='academic-v20-cache1'" "$F"
           grep -Fq "ACADEMIC_COMPAT='v14'" "$F"
           grep -Fq "academicCacheKey" "$F"
           grep -Fq "String(x.schema||'')!==CACHE_SCHEMA" "$F"
@@ -63,4 +65,4 @@ jobs:
           grep -Fq "const MATHS_MOCK_SCHEMA_V10='mocks-v10'" "$M"
           grep -Fq "mockSchema:MATHS_MOCK_SCHEMA_V10" "$M"
           grep -Fq "const MATHS_MOCK_SET_ID_V10='MOCK_QUESTIONS'" "$M"
-          if grep -Fq "SCHEMA='academic-v14-cache1',MOCK_SCHEMA" "$F"; then echo 'Mock and academic cache schemas were coupled'; exit 1; fi
+          if grep -Fq "SCHEMA='academic-v20-cache1',MOCK_SCHEMA" "$F"; then echo 'Mock and academic cache schemas were coupled'; exit 1; fi

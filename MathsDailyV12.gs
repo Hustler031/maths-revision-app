@@ -1,5 +1,5 @@
-const MATHS_DAILY_VERSION='v13';
-const MATHS_DAILY_DEFAULT_SIZE=20;
+const MATHS_DAILY_VERSION='v20';
+const MATHS_DAILY_DEFAULT_SIZE=MATHS_DAILY_SIZE_V20;
 
 function mathsStudyClockV12_(){
   const tz=studyTimezone_()||'Asia/Kolkata';
@@ -65,7 +65,7 @@ function mathsDailySessionsV12_(){
   }).filter(x=>x.day>0).sort((a,b)=>dateMs_(b.row.updated_at)-dateMs_(a.row.updated_at));
 }
 
-function mathsDailySessionForDayV12_(day){return mathsDailySessionsV12_().find(x=>Number(x.day)===Number(day))||null}
+function mathsDailySessionForDayV12_(day){return mathsDailyCanonicalSessionV20_(mathsDailySessionsV12_(),day)}
 function mathsSessionQuestionIdsV12_(row){return new Set(json_((row&&row.question_ids_json)||'[]',[]).map(String))}
 function mathsPreviousDailyIdsV12_(day){const prev=mathsDailySessionForDayV12_(Number(day)-1);return prev?mathsSessionQuestionIdsV12_(prev.row):new Set()}
 
@@ -75,56 +75,34 @@ function mathsRecentPracticeIdsV12_(){
 }
 
 function mathsDailyScoreV12_(q,state,recentIds){
-  const id=String(q.question_id),s=state[id]||{},attempts=Number(s.attempts||0),last=normalizeLabel_(s.last_result),difficult=bool_(s.difficult),wrong=last==='wrong',slow=Number(s.last_response_sec||0)>=20;
-  let score=0;
-  if(difficult)score+=120000;
-  if(wrong)score+=100000;
-  if(attempts===0)score+=70000;
-  if(slow)score+=30000;
-  if(isMarked_(s))score+=8000;
-  if(attempts>=2)score+=Math.min(15000,attempts*900);
-  const lastMs=dateMs_(s.last_attempt),ageDays=lastMs?Math.floor((Date.now()-lastMs)/86400000):999;
-  if(attempts>0){if(ageDays>=14)score+=50000;else if(ageDays>=7)score+=35000;else if(ageDays>=3)score+=20000;else score+=5000}
-  if(recentIds&&recentIds.has(id))score-=difficult||wrong?20000:80000;
-  score+=Math.random()*5000;
-  return score;
+  const profiles=mathsAttemptProfileMapV20_(false),day=mathsStudyClockV12_().day,lastDaily=mathsLastDailyDayByIdV20_(mathsDailySessionsV12_());let score=mathsDailyScoreV20_(q,state,profiles,day,lastDaily);
+  if(recentIds&&recentIds.has(String(q.question_id)))score-=80000;return score;
 }
 
-function mathsAdaptiveDailyPoolV12_(count,recentIds){
-  const state=mathsStateMapV9_(),eligible=mathsDailyEligibleV12_().filter(q=>!isMastered_(state[String(q.question_id)]||{}));
-  const ranked=eligible.map(q=>({q,score:mathsDailyScoreV12_(q,state,recentIds)}));
-  const picked=[],chapterCounts={},want=Math.min(Math.max(1,Number(count||MATHS_DAILY_DEFAULT_SIZE)),ranked.length);
-  while(picked.length<want&&ranked.length){
-    let best=-1,bestAdjusted=-Infinity;
-    for(let i=0;i<ranked.length;i++){
-      const chapter=normalizeLabel_(ranked[i].q.chapter||'other'),used=Number(chapterCounts[chapter]||0),adjusted=ranked[i].score-used*12000;
-      if(adjusted>bestAdjusted){best=i;bestAdjusted=adjusted}
-    }
-    const item=ranked.splice(best,1)[0],chapter=normalizeLabel_(item.q.chapter||'other');
-    chapterCounts[chapter]=Number(chapterCounts[chapter]||0)+1;picked.push(item.q);
-  }
-  return picked;
+function mathsAdaptiveDailyPoolV12_(count,recentIds,studyDay){
+  const state=mathsStateMapV9_(),profiles=mathsAttemptProfileMapV20_(false),sessions=mathsDailySessionsV12_(),day=Math.max(1,Number(studyDay||mathsStudyClockV12_().day)),size=Math.min(Math.max(1,Number(count||MATHS_DAILY_DEFAULT_SIZE)),mathsDailyEligibleV12_().length),options={size:size,newQuota:Number(getSetting_('daily_new_quota',MATHS_DAILY_NEW_QUOTA_V20)||MATHS_DAILY_NEW_QUOTA_V20),difficultRotationDays:Number(getSetting_('difficult_rotation_days',MATHS_DIFFICULT_ROTATION_DAYS_V20)||MATHS_DIFFICULT_ROTATION_DAYS_V20),newWindowDays:Number(getSetting_('new_content_window_days',MATHS_NEW_WINDOW_DAYS)||MATHS_NEW_WINDOW_DAYS)},eligible=mathsDailyEligibleV12_();
+  if(recentIds&&recentIds.size){const fresh=eligible.filter(q=>!recentIds.has(String(q.question_id))),fallback=eligible.filter(q=>recentIds.has(String(q.question_id)));let picked=mathsSelectDailyFromContextV20_(fresh,state,profiles,sessions,day,options);if(picked.length<size)picked=uniqueQuestions_(picked.concat(mathsSelectDailyFromContextV20_(fallback,state,profiles,sessions,day,Object.assign({},options,{size:size-picked.length,newQuota:0}))));return picked.slice(0,size)}
+  return mathsSelectDailyFromContextV20_(eligible,state,profiles,sessions,day,options);
 }
 
-function mathsDailyCompositionV12_(pool,state){
-  const out={difficult:0,wrong:0,unseen:0,revision:0,chapters:{}};state=state||mathsStateMapV9_();
-  (pool||[]).forEach(q=>{const s=state[String(q.question_id)]||{},chapter=String(q.chapter||'Other');out.chapters[chapter]=Number(out.chapters[chapter]||0)+1;if(bool_(s.difficult))out.difficult++;else if(normalizeLabel_(s.last_result)==='wrong')out.wrong++;else if(Number(s.attempts||0)===0)out.unseen++;else out.revision++});
-  return out;
+function mathsDailyCompositionV12_(pool,state,day){
+  state=state||mathsStateMapV9_();return mathsDailyCompositionV20_(pool,state,mathsAttemptProfileMapV20_(false),Math.max(1,Number(day||mathsStudyClockV12_().day)),mathsDailySessionsV12_());
 }
 
 function mathsMakeDailySessionV12_(pool,day,mode,title,request){
-  const state=mathsStateMapV9_(),sessionId=Utilities.getUuid(),composition=mathsDailyCompositionV12_(pool,state),params=Object.assign({},request||{},{planDay:Number(day),planChapter:'Mixed Revision',adaptiveDailyV12:true,dailyVersion:MATHS_DAILY_VERSION,dailyComposition:composition});
+  const state=mathsStateMapV9_(),sessionId=Utilities.getUuid(),composition=mathsDailyCompositionV12_(pool,state,day),params=Object.assign({},request||{},{planDay:Number(day),planChapter:'Mixed Revision',adaptiveDailyV12:true,dailyVersion:MATHS_DAILY_VERSION,dailyComposition:composition});
   const payload=mathsAvoidRepeatOptionV9_(sessionPayload_(sessionId,pool,state,title,mode,0,null),state);payload.planDay=Number(day);payload.planChapter='Mixed Revision';payload.dailyComposition=composition;
-  saveSession_({session_id:sessionId,mode,title,question_ids_json:JSON.stringify(pool.map(q=>q.question_id)),current_index:0,updated_at:new Date(),completed:false,params_json:JSON.stringify(params)});
+  saveSession_({session_id:sessionId,mode,title,question_ids_json:JSON.stringify(pool.map(q=>q.question_id)),current_index:0,updated_at:new Date(),completed:false,params_json:JSON.stringify(params),rendered_questions_json:JSON.stringify(payload.questions||[])});
   return payload;
 }
 
 function startMathsDailyV12(request){
-  ensureMathsInfrastructure_();request=Object.assign({},request||{});const clock=mathsStudyClockV12_(),day=Math.max(1,Number(request.planDay||clock.day)),existing=mathsDailySessionForDayV12_(day);
-  if(existing){if(!bool_(existing.row.completed))return resumeSession(String(existing.row.session_id));return {ok:false,dailyComplete:true,message:'Day '+day+' is complete. Use Practice More for another mixed set.'}}
-  const pool=mathsAdaptiveDailyPoolV12_(MATHS_DAILY_DEFAULT_SIZE,mathsPreviousDailyIdsV12_(day));
-  if(!pool.length)return {ok:false,message:'No eligible Daily questions are available.'};
-  return mathsMakeDailySessionV12_(pool,day,'daily','Day '+day+' · Mixed Revision',request);
+  ensureMathsInfrastructure_();request=Object.assign({},request||{});
+  return mathsLockedV9_(()=>{const clock=mathsStudyClockV12_(),day=Math.max(1,Number(request.planDay||clock.day)),existing=mathsDailySessionForDayV12_(day);
+    if(existing){if(!bool_(existing.row.completed))return resumeSession(String(existing.row.session_id));return {ok:false,dailyComplete:true,message:'Day '+day+' is complete. Use Practice More for another mixed set.'}}
+    const pool=mathsAdaptiveDailyPoolV12_(MATHS_DAILY_DEFAULT_SIZE,null,day);if(!pool.length)return {ok:false,message:'No eligible Daily questions are available.'};
+    return mathsMakeDailySessionV12_(pool,day,'daily','Day '+day+' · Mixed Revision',request);
+  });
 }
 
 function startMathsPracticeMoreV12(request){
@@ -139,7 +117,7 @@ function mathsSessionAttemptCountV12_(sessionId){
 
 function mathsPendingDailyV12_(currentDay){
   const by={};mathsDailySessionsV12_().forEach(x=>{if(!by[x.day])by[x.day]=x});const out=[];
-  for(let d=Number(currentDay)-1;d>=1&&out.length<2;d--){const x=by[d];if(x&&bool_(x.row.completed))continue;out.push({day:d,chapter:'Mixed Revision',status:x?'In progress':'Not attempted',chapterTotal:MATHS_DAILY_DEFAULT_SIZE,chapterRemaining:x?Math.max(0,MATHS_DAILY_DEFAULT_SIZE-mathsSessionAttemptCountV12_(x.row.session_id)):MATHS_DAILY_DEFAULT_SIZE})}
+  for(let d=Number(currentDay)-1;d>=1&&out.length<5;d--){const x=mathsDailySessionForDayV12_(d);if(x&&bool_(x.row.completed))continue;out.push({day:d,chapter:'Mixed Revision',status:x?'In progress':'Not attempted',chapterTotal:x?json_(x.row.question_ids_json,[]).length:MATHS_DAILY_DEFAULT_SIZE,chapterRemaining:x?Math.max(0,json_(x.row.question_ids_json,[]).length-mathsSessionAttemptCountV12_(x.row.session_id)):MATHS_DAILY_DEFAULT_SIZE})}
   return out;
 }
 

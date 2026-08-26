@@ -47,11 +47,14 @@ jobs:
           for token in getAppBootstrapV9 getAppBootstrapV11 getMathsHomeV12 getMathsSnapshotV9 getMathsNewHubV9 getStarredRevisionV9 getStarredRevisionGroupV9 getConceptsHubV9 getMathsScopeMetricV9 getMathsCacheVersionV9 startMathsPracticeV9 startMathsDailyV12 startMathsPracticeMoreV12 toggleStarredV9 toggleDifficultV9 toggleConceptV9 saveSessionPosition; do
             [[ "$SERVER" == *"$token"* ]] || { echo "Missing backend contract: $token"; exit 1; }
           done
-          for token in mathsDemandSetIdsV12_ mathsMockIdsV12_ mathsDailyLectureChapterNamesV12_ mathsAdaptiveDailyPoolV12_ mathsDailyCompositionV12_ mockLeak conceptLeak miscLeak; do
-            [[ "$SERVER" == *"$token"* ]] || { echo "Missing Daily V13 guard: $token"; exit 1; }
+          for token in mathsDemandSetIdsV12_ mathsMockIdsV12_ mathsDailyLectureChapterNamesV12_ mathsAdaptiveDailyPoolV12_ mathsDailyCompositionV12_ mathsSelectDailyFromContextV20_ mathsAttemptProfilesFromRowsV20_ mockLeak conceptLeak miscLeak; do
+            [[ "$SERVER" == *"$token"* ]] || { echo "Missing Daily V20 guard: $token"; exit 1; }
           done
-          grep -Fq "const MATHS_DAILY_VERSION='v13'" MathsDailyV12.gs || { echo 'Daily V13 not active'; exit 1; }
-          grep -Fq "mathsAdaptiveDailyPoolV12_(MATHS_DAILY_DEFAULT_SIZE" MathsDailyV12.gs || { echo 'Daily is not fixed at 20'; exit 1; }
+          grep -Fq "const MATHS_DAILY_VERSION='v20'" MathsDailyV12.gs || { echo 'Daily V20 not active'; exit 1; }
+          grep -Fq 'const MATHS_DAILY_SIZE_V20=25' MathsLearningEngineV20.gs || { echo 'Daily is not fixed at 25'; exit 1; }
+          grep -Fq 'const MATHS_DAILY_NEW_QUOTA_V20=7' MathsLearningEngineV20.gs || { echo 'Daily new-content quota is not 7'; exit 1; }
+          grep -Fq 'const MATHS_DIFFICULT_ROTATION_DAYS_V20=3' MathsLearningEngineV20.gs || { echo 'Difficult rotation is not 3 study days'; exit 1; }
+          grep -Fq "mathsAdaptiveDailyPoolV12_(MATHS_DAILY_DEFAULT_SIZE" MathsDailyV12.gs || { echo 'Daily V20 selector is not authoritative'; exit 1; }
           grep -Fq "ctx.mockIds&&ctx.mockIds[id]" MathsDailyV12.gs || { echo 'Mock exclusion missing'; exit 1; }
           grep -Fq "ctx.calcIds&&ctx.calcIds[id]" MathsDailyV12.gs || { echo 'Calculation exclusion missing'; exit 1; }
           grep -Fq "topic==='concepts'" MathsDailyV12.gs || { echo 'Concept-bank exclusion missing'; exit 1; }
@@ -92,6 +95,10 @@ jobs:
           if grep -qE '\.quiz-tools|\.quiz-nav' MathsQuizUI.html MathsAppUI.html MathsMocksUI.html MathsFinalizationUIV12.html; then echo 'Wrong English-only quiz selector leaked into Maths runtime'; exit 1; fi
           grep -q "MATHS_DATA_VERSION" MathsCore.gs || { echo 'Monotonic cache version missing'; exit 1; }
           grep -q "\['IMPORTANT','DIFFICULT'\]" MathsCore.gs || { echo 'Unified revision membership missing'; exit 1; }
+          grep -Fq 'Rendered_Questions_JSON' Data.gs || { echo 'Exact resume snapshot schema missing'; exit 1; }
+          grep -Fq 'mathsRequireQuestionContextV20_' MathsQuizLifecycleV15.gs || { echo 'Server-side session/question validation missing'; exit 1; }
+          grep -Fq 'client_attempt_key' MathsQuizLifecycleV15.gs || { echo 'Attempt idempotency key missing'; exit 1; }
+          grep -Fq 'mathsLockedV9_' MathsDailyV12.gs || { echo 'Daily creation lock missing'; exit 1; }
       - name: Validate served-page assembly sources
         shell: bash
         run: |

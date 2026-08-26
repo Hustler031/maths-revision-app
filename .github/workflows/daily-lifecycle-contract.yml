@@ -4,6 +4,8 @@ on:
     paths:
       - 'Code.gs'
       - 'MathsDailyV12.gs'
+      - 'MathsLearningEngineV20.gs'
+      - 'MathsQuizLifecycleV15.gs'
       - 'MathsQuizUI.html'
       - 'DailyLifecycleFixUI.html'
       - '.github/workflows/daily-lifecycle-contract.yml'
@@ -12,6 +14,8 @@ on:
     paths:
       - 'Code.gs'
       - 'MathsDailyV12.gs'
+      - 'MathsLearningEngineV20.gs'
+      - 'MathsQuizLifecycleV15.gs'
       - 'MathsQuizUI.html'
       - 'DailyLifecycleFixUI.html'
       - '.github/workflows/daily-lifecycle-contract.yml'
@@ -24,6 +28,10 @@ jobs:
         run: |
           set -e
           grep -Fq "function mathsDailyEligibleV12_(){return mathsAcademicQuestionsV14_()}" MathsDailyV12.gs
+          grep -Fq "const MATHS_DAILY_SIZE_V20=25" MathsLearningEngineV20.gs
+          grep -Fq "const MATHS_DAILY_NEW_QUOTA_V20=7" MathsLearningEngineV20.gs
+          grep -Fq "const MATHS_DIFFICULT_ROTATION_DAYS_V20=3" MathsLearningEngineV20.gs
+          grep -Fq "mathsLockedV9_" MathsDailyV12.gs
           grep -Fq "Finish after every question is durably saved." Code.gs
           grep -Fq "mathsSessionAttemptCountV12_(id)" Code.gs
           if grep -Fq "if(normalizeLabel_(session.mode)==='daily')" Code.gs; then echo 'Completion gate must protect every quiz mode'; exit 1; fi
@@ -31,5 +39,7 @@ jobs:
           grep -Fq "saveConfirmed" MathsQuizUI.html
           grep -Fq "unresolvedIndexes" MathsQuizUI.html
           grep -Fq "Q'+(target+1)+' was not saved" MathsQuizUI.html
+          grep -Fq "clientAttemptKey" MathsQuizUI.html
+          grep -Fq "mathsRequireQuestionContextV20_" MathsQuizLifecycleV15.gs
           grep -Fq "function patchDailyCard(d)" DailyLifecycleFixUI.html
           grep -Fq "maths:attempt-saved" DailyLifecycleFixUI.html

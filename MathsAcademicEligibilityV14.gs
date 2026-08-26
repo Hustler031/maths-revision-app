@@ -15,6 +15,7 @@ function mathsAcademicContextV14_(){
 
 function mathsIsNormalAcademicQuestionV14_(q,ctx){
   if(!q||!active_(q))return false;
+  if(!mathsRuntimeQuestionValidV20_(q))return false;
   ctx=ctx||{};
   const id=String(q.question_id||'').trim(),chapter=normalizeLabel_(q.chapter||''),topic=normalizeLabel_(q.topic||''),type=normalizeLabel_(q.card_type||''),template=String(q.template_group||'').trim().toUpperCase(),bank=normalizeLabel_(q.practice_bank||'');
   if(!id||!chapter)return false;
@@ -35,7 +36,7 @@ function mathsAcademicQuestionsV14_(){const ctx=mathsAcademicContextV14_();retur
 function mathsScopePoolV14_(request){
   request=request||{};
   const scope=String(request.scope||'all').toLowerCase();
-  if(scope==='demand_set'||scope==='star_history'||scope==='concept_saved')return mathsScopePoolV9_(request);
+  if(scope==='demand_set'||scope==='star_history'||scope==='revision_current'||scope==='concept_saved')return mathsScopePoolV9_(request);
   const chapter=String(request.chapter||''),topic=String(request.majorTopic||request.majorTopicKey||''),chapters=(request.chapters||[]).map(String);
   let all=mathsAcademicQuestionsV14_();
   if(scope==='new_practice'){
@@ -59,9 +60,10 @@ function startMathsPracticeV14(request){
   ensureMathsV3_();request=Object.assign({},request||{});
   const state=mathsStateMapV9_(),kind=String(request.kind||'random').toLowerCase(),scope=String(request.scope||'all').toLowerCase(),count=Math.max(1,Math.min(100,Number(request.count||20)));
   let pool=mathsScopePoolV14_(request),label='Random';
-  if(kind==='all'){if(scope==='star_history')pool=pool.filter(q=>!isMastered_(state[String(q.question_id)]));pool=shuffle_(pool);label='Practice All'}
+  if(kind==='all'){if(scope==='star_history'||scope==='revision_current')pool=pool.filter(q=>!isMastered_(state[String(q.question_id)]));pool=shuffle_(pool);label='Practice All'}
   else if(kind==='new'){pool=mathsNewPoolV9_(pool,state).slice(0,count);label='New'}
   else if(kind==='weak'){pool=mathsWeakRankV9_(pool,state).slice(0,count);label='Weak'}
+  else if(kind==='hard'){pool=mathsHardRankV20_(pool,state,mathsAttemptProfileMapV20_(false)).slice(0,count);label='Hard'}
   else if(kind==='starred'||kind==='important'){pool=shuffle_(pool.filter(q=>isMarked_(state[String(q.question_id)])&&!isMastered_(state[String(q.question_id)]))).slice(0,count);label='Starred'}
   else if(kind==='difficult'){pool=shuffle_(pool.filter(q=>bool_((state[String(q.question_id)]||{}).difficult)&&!isMastered_(state[String(q.question_id)]))).slice(0,count);label='Difficult'}
   else {pool=shuffle_(pool.filter(q=>!isMastered_(state[String(q.question_id)]))).slice(0,count);label='Random'}
@@ -75,7 +77,7 @@ function getMathsViewItemsV14(request){
   const state=mathsStateMapV9_();
   return mathsScopePoolV14_(request||{}).map(q=>{
     const s=state[String(q.question_id)]||{},served=serveQuestion_(q,s,getNotesMap_()[String(q.question_id)]||'');
-    return {id:String(q.question_id),chapter:q.chapter||'',topic:q.topic||'',subtopic:q.subtopic||'',prompt:served.prompt||q.prompt||'',options:served.options||[],correctOption:served.correctOption||'',answer:served.answer||q.answer||'',explanation:served.explanation||q.explanation||'',memoryCue:served.memoryCue||q.memory_cue||'',sourceFile:q.source_file||'',sourcePage:q.source_page||'',starred:isMarked_(s),difficult:bool_(s.difficult),attempts:Number(s.attempts||0),wrong:normalizeLabel_(s.last_result)==='wrong'};
+    return {id:String(q.question_id),chapter:q.chapter||'',topic:q.topic||'',subtopic:q.subtopic||'',prompt:served.prompt||q.prompt||'',options:served.options||[],correctOption:served.correctOption||'',answer:served.answer||q.answer||'',explanation:served.explanation||q.explanation||'',memoryCue:served.memoryCue||q.memory_cue||'',sourceFile:q.source_file||'',sourcePage:q.source_page||'',starred:isMarked_(s),difficult:bool_(s.difficult),hard:mathsIsHardV20_(q,state,mathsAttemptProfileMapV20_(false)),weak:mathsIsWeakV20_(q,state,mathsAttemptProfileMapV20_(false)),attempts:Number(s.attempts||0),wrong:normalizeLabel_(s.last_result)==='wrong'};
   });
 }
 

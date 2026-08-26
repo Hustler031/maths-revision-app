@@ -1,0 +1,7 @@
+{
+  "name": "maths-revision-app-contracts",
+  "private": true,
+  "scripts": {
+    "test": "node --test tests/*.test.js"
+  }
+}

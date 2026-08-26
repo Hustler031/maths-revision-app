@@ -33,13 +33,5 @@ function getPracticeCheckpoint(request){
 }
 
 function saveSessionPosition(sessionId,index){
-  ensureMathsInfrastructure_();
-  const id=String(sessionId||'').trim();
-  if(!id)return {ok:false};
-  const s=getSessionById_(id);
-  if(!s||bool_(s.completed))return {ok:false};
-  const ids=json_(s.question_ids_json,[]);
-  const safe=ids.length?Math.max(0,Math.min(Number(index||0),ids.length-1)):0;
-  updateSessionProgress_(id,safe,false);
-  return {ok:true,currentIndex:safe};
+  return saveSessionPositionV3(sessionId,index);
 }

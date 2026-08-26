@@ -7,7 +7,7 @@ function completePracticeUiPatch_(){
 
   // Academic cache compatibility: old/pre-V14 cache entries are never rendered.
   const oldCacheDecl="const PREFIX='maths-app-v9:',FRESH=5*60*1000,MAX_STALE=24*60*60*1000;const mem={};let knownVersion='',prefetching=false;";
-  const newCacheDecl="const PREFIX='maths-app-v9:',FRESH=5*60*1000,MAX_STALE=24*60*60*1000,CACHE_SCHEMA='academic-v14-cache1',ACADEMIC_COMPAT='v14';const mem={};let knownVersion='',prefetching=false,bootstrapGuarded=false,bootstrapValue=null;";
+  const newCacheDecl="const PREFIX='maths-app-v9:',FRESH=5*60*1000,MAX_STALE=24*60*60*1000,CACHE_SCHEMA='academic-v20-cache1',ACADEMIC_COMPAT='v14';const mem={};let knownVersion='',prefetching=false,bootstrapGuarded=false,bootstrapValue=null;";
 
   const oldCacheFns="function read(k){if(mem[k])return mem[k];try{const x=JSON.parse(localStorage.getItem(PREFIX+k)||'null');if(!x)return null;mem[k]=x;return x}catch(e){return null}}function write(k,d){const x={ts:Date.now(),version:d&&d.version||knownVersion||'',data:d};mem[k]=x;try{localStorage.setItem(PREFIX+k,JSON.stringify(x))}catch(e){}return d}function drop(k){delete mem[k];try{localStorage.removeItem(PREFIX+k)}catch(e){}}\nfunction cached(k){const x=read(k);if(!x)return null;const age=Date.now()-Number(x.ts||0);return {data:x.data,fresh:age<=FRESH,stale:age<=MAX_STALE,version:x.version||''}}";
   const newCacheFns="function academicCacheKey(k){return k==='home'||k==='bootstrap'||k==='new'||k==='snapshot'||String(k).indexOf('metric:')===0}function cacheCompat(d,k){if(!academicCacheKey(k))return'';if(k==='bootstrap')return String(d&&d.chapterVisibilityVersion||'');return String(d&&d.eligibilityVersion||'')}function read(k){if(mem[k])return mem[k];try{const x=JSON.parse(localStorage.getItem(PREFIX+k)||'null');if(!x)return null;mem[k]=x;return x}catch(e){return null}}function write(k,d){const x={ts:Date.now(),version:d&&d.version||knownVersion||'',schema:CACHE_SCHEMA,compat:cacheCompat(d,k),data:d};mem[k]=x;try{localStorage.setItem(PREFIX+k,JSON.stringify(x))}catch(e){}return d}function drop(k){delete mem[k];try{localStorage.removeItem(PREFIX+k)}catch(e){}}\nfunction cached(k){const x=read(k);if(!x)return null;if(String(x.schema||'')!==CACHE_SCHEMA){drop(k);return null}if(academicCacheKey(k)&&String(x.compat||'')!==ACADEMIC_COMPAT){drop(k);return null}const age=Date.now()-Number(x.ts||0);return {data:x.data,fresh:age<=FRESH,stale:age<=MAX_STALE,version:x.version||'',compat:x.compat||''}}";
@@ -33,7 +33,7 @@ function completePracticeUiPatch_(){
     .replace('r.startMathsPracticeV9(arg||{})','r.startMathsPracticeV14(arg||{})')
     .replace('r.getMathsViewItemsV9(arg||{})','r.getMathsViewItemsV14(arg||{})')
     .replace("Finish Day '+day+' first, then use focused practice.",'Mixed adaptive revision · whole question bank, Calculation excluded.')
-    .replace("Fresh-first: '+target+' questions · reinforcement 0","Adaptive mix: '+target+' questions · Difficult, wrong, unseen and due first")
+    .replace("Fresh-first: '+target+' questions · reinforcement 0","7 New guaranteed · Difficult every 3 days · Weak, Hard and due revision")
     .replace("'+(done?'Continue Day '+day+' · '+left+' left':'Start Day '+day+' · '+left+' left')+'","'+(daily.completed?'Practice More':done?'Continue Day '+day+' · '+left+' left':'Start Day '+day+' · '+left+' left')+'")
     .replace("qs('#maDaily').onclick=()=>beginQuiz('daily',{planDay:day});","qs('#maDaily').onclick=()=>daily.completed?beginQuiz('practice_more',{count:target}):beginQuiz('daily',{planDay:day});")
     .replace(oldCacheDecl,newCacheDecl)
@@ -45,7 +45,7 @@ function completePracticeUiPatch_(){
 
   if(!appUi.includes('getAppBootstrapV14')||!appUi.includes('getMathsHomeV14')||!appUi.includes('getMathsSnapshotV14')||!appUi.includes('getMathsNewHubV14')||!appUi.includes('getMathsScopeMetricV14')||!appUi.includes('startMathsPracticeV14')||!appUi.includes('getMathsViewItemsV14'))throw new Error('Maths academic eligibility route replacement failed');
   if(!appUi.includes('refreshHomeSilent')||!appUi.includes('reconcileCaches')||appUi.includes("Promise.allSettled([call('snapshot')"))throw new Error('Maths cache orchestration replacement failed');
-  if(!appUi.includes("CACHE_SCHEMA='academic-v14-cache1'")||!appUi.includes('academicCacheKey')||!appUi.includes('installBootstrapGuard'))throw new Error('Maths cache compatibility replacement failed');
+  if(!appUi.includes("CACHE_SCHEMA='academic-v20-cache1'")||!appUi.includes('academicCacheKey')||!appUi.includes('installBootstrapGuard'))throw new Error('Maths cache compatibility replacement failed');
 
   // Keep Mocks isolated, but make its lightweight hub and chapter reads cache-aware.
   const oldMockDecl="var KEY='maths-mocks-v10:hub',FRESH=5*60*1000,hub=null,currentChapter='',questions=[];";

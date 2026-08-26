@@ -1,8 +1,8 @@
 <script>
 (function(){
 'use strict';
-var MATHS_COLD_START_REPAIR_VERSION='v18-cold-start-3';
-var PREFIX='maths-app-v9:',MOCK_PREFIX='maths-mocks-v10:',CACHE_SCHEMA='academic-v14-cache1',COMPAT='v14',MAX_STALE=24*60*60*1000;
+var MATHS_COLD_START_REPAIR_VERSION='v20-cold-start-1';
+var PREFIX='maths-app-v9:',MOCK_PREFIX='maths-mocks-v10:',CACHE_SCHEMA='academic-v20-cache1',COMPAT='v14',MAX_STALE=24*60*60*1000;
 var startupDone=false,startupRunning=false,silentSyncRunning=false,startupAttempts=0,lastSyncAt=0,resumePolicy=null,observer=null;
 function q(s){return document.querySelector(s)}
 function safeParse(raw){try{return JSON.parse(raw||'null')}catch(e){return null}}

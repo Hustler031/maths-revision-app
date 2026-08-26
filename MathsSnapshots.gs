@@ -117,10 +117,5 @@ function toggleStarredV6(questionId,sessionId){const r=toggleImportantV3(questio
 function toggleDifficultV6(questionId,sessionId){const r=toggleDifficultV3(questionId,sessionId);invalidateMathsSnapshotsV6();return r;}
 
 function startMathsV6Quiz(request){
-  ensureMathsV3_();request=Object.assign({},request||{});const kind=String(request.kind||'random').toLowerCase();
-  if(kind!=='all')return startMathsV5Quiz(request);
-  /* Practice All always starts a fresh, reshuffled authoritative session. */
-  let pool=mathsV5Pool_(request);pool=shuffle_(pool);
-  if(!pool.length)return {ok:false,message:'No eligible practice all questions found for this selection.'};
-  request.restart=true;return makeSessionV4_(pool,request,'Practice All');
+  return startMathsPracticeV14(request||{});
 }

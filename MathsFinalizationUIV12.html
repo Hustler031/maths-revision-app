@@ -6,7 +6,7 @@
 (function(){
 'use strict';
 var TIMER_PREF='maths-visible-timer-v12',DAY_KEY='maths-india-day-v12',ROLLOVER_KEY='maths-day-rollover-pending-v12';
-var timerOn=false,timerHandle=null,quizVisible=false;
+var timerOn=false,timerHandle=null,quizVisible=false,dailyOpenBusy=false;
 try{timerOn=sessionStorage.getItem(TIMER_PREF)==='1'}catch(e){}
 function one(s,r){return(r||document).querySelector(s)}
 function indiaDay(){try{return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Kolkata',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())}catch(e){return new Date().toISOString().slice(0,10)}}
@@ -22,7 +22,7 @@ function ensureTimer(){
 function hideTimer(){clearTick();var b=one('#mqTopTimer');if(b)b.remove();var top=one('.topbar');if(top)top.classList.remove('mq-quiz-active')}
 function syncTick(){clearTick();if(timerOn&&quizVisible&&one('.quiz-wrap'))timerHandle=setInterval(paintTimer,1000)}
 function openV12(mode,opts){
-  if(typeof loading==='function')loading(true);var runner=google.script.run.withSuccessHandler(function(x){if(typeof loading==='function')loading(false);if(!x||x.ok===false){if(typeof toast==='function')toast(x&&x.message||'No eligible questions');return}if(typeof window.openQuiz==='function')window.openQuiz(x)}).withFailureHandler(function(e){if(typeof loading==='function')loading(false);if(typeof toast==='function')toast(e&&e.message?e.message:String(e))});
+  if(dailyOpenBusy)return;dailyOpenBusy=true;if(typeof loading==='function')loading(true);var runner=google.script.run.withSuccessHandler(function(x){dailyOpenBusy=false;if(typeof loading==='function')loading(false);if(!x||x.ok===false){if(typeof toast==='function')toast(x&&x.message||'No eligible questions');return}if(typeof window.openQuiz==='function')window.openQuiz(x)}).withFailureHandler(function(e){dailyOpenBusy=false;if(typeof loading==='function')loading(false);if(typeof toast==='function')toast(e&&e.message?e.message:String(e))});
   if(mode==='daily')runner.startMathsDailyV12(opts||{});else runner.startMathsPracticeMoreV12(opts||{});
 }
 var baseBegin=window.beginQuiz;if(typeof baseBegin==='function')window.beginQuiz=function(mode,opts){if(mode==='daily'||mode==='practice_more')return openV12(mode,opts||{});return baseBegin.apply(this,arguments)};

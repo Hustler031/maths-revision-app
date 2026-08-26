@@ -20,6 +20,22 @@ function getNotesMap_() {
   return m;
 }
 
+function sheetHeaderMap_(sh){
+  const headers=sh.getRange(1,1,1,Math.max(1,sh.getLastColumn())).getValues()[0],map={};
+  headers.forEach((h,i)=>{const k=key_(h);if(k)map[k]=i+1});
+  return {headers:headers,map:map};
+}
+
+function appendSheetObject_(sh,obj){
+  const meta=sheetHeaderMap_(sh),row=meta.headers.map(h=>{const k=key_(h);return Object.prototype.hasOwnProperty.call(obj,k)?obj[k]:''});
+  sh.appendRow(row);return sh.getLastRow();
+}
+
+function updateSheetObject_(sh,rowNumber,obj){
+  const meta=sheetHeaderMap_(sh);
+  Object.keys(obj||{}).forEach(k=>{const col=meta.map[key_(k)];if(col)sh.getRange(Number(rowNumber),col).setValue(obj[k])});
+}
+
 function upsertState_(id, patch) {
   id=validQuestionId_(id); patch=patch||{};
   const sh=getSheet_(MATHS.SHEETS.STATE), rows=sheetObjects_(sh);
@@ -33,9 +49,9 @@ function upsertState_(id, patch) {
   if(Object.prototype.hasOwnProperty.call(patch,'lastVariant'))s.last_variant=String(patch.lastVariant||'');
   if(Object.prototype.hasOwnProperty.call(patch,'lastCorrectOption'))s.last_correct_option=String(patch.lastCorrectOption||'');
   const q=getAllQuestions_().concat(getGeneratedQuestions_()).find(x=>String(x.question_id)===id)||{};
-  const row=[id,Number(s.attempts||0),!!s.mastered,!!s.marked,s.last_attempt||'',s.last_result||'',Number(s.last_response_sec||0),q.chapter||s.chapter||'',q.topic||s.topic||'',q.subtopic||s.subtopic||'',s.last_variant||'',s.last_correct_option||''];
-  if(matches.length){matches.forEach(r=>sh.getRange(r.__row,1,1,row.length).setValues([row]));}else sh.appendRow(row);
-  return {question_id:id,attempts:row[1],mastered:row[2],marked:row[3],last_attempt:row[4],last_result:row[5],last_response_sec:row[6],last_variant:row[10],last_correct_option:row[11]};
+  const row={question_id:id,attempts:Number(s.attempts||0),mastered:!!s.mastered,marked:!!s.marked,last_attempt:s.last_attempt||'',last_result:s.last_result||'',last_response_sec:Number(s.last_response_sec||0),chapter:q.chapter||s.chapter||'',topic:q.topic||s.topic||'',subtopic:q.subtopic||s.subtopic||'',last_variant:s.last_variant||'',last_correct_option:s.last_correct_option||'',difficult:bool_(s.difficult)};
+  if(matches.length){matches.forEach(r=>updateSheetObject_(sh,r.__row,row));}else appendSheetObject_(sh,row);
+  return Object.assign({},row);
 }
 
 function getStateMap_() {
@@ -45,7 +61,7 @@ function getStateMap_() {
     if(!m[id]) { m[id]=Object.assign({},r); return; }
     const a=m[id], b=r;
     a.attempts=Math.max(Number(a.attempts||0),Number(b.attempts||0));
-    a.mastered=isMastered_(a)||isMastered_(b); a.marked=isMarked_(a)||isMarked_(b);
+    a.mastered=isMastered_(a)||isMastered_(b); a.marked=isMarked_(a)||isMarked_(b); a.difficult=bool_(a.difficult)||bool_(b.difficult);
     const ta=dateMs_(a.last_attempt), tb=dateMs_(b.last_attempt);
     if(tb>ta){ a.last_attempt=b.last_attempt; a.last_result=b.last_result; a.last_response_sec=b.last_response_sec; a.last_variant=b.last_variant; a.last_correct_option=b.last_correct_option; }
     if(!a.chapter&&b.chapter)a.chapter=b.chapter; if(!a.topic&&b.topic)a.topic=b.topic; if(!a.subtopic&&b.subtopic)a.subtopic=b.subtopic;
@@ -53,11 +69,17 @@ function getStateMap_() {
   return m;
 }
 
-function saveSession_(s) { getSheet_(MATHS.SHEETS.SESSIONS).appendRow([s.session_id,s.mode,s.title,s.question_ids_json,s.current_index,s.updated_at,s.completed,s.params_json]); }
+function saveSession_(s) {
+  appendSheetObject_(getSheet_(MATHS.SHEETS.SESSIONS),{
+    session_id:s.session_id,mode:s.mode,title:s.title,question_ids_json:s.question_ids_json,
+    current_index:Number(s.current_index||0),updated_at:s.updated_at||new Date(),completed:!!s.completed,
+    params_json:s.params_json||'{}',rendered_questions_json:s.rendered_questions_json||JSON.stringify(s.rendered_questions||[])
+  });
+}
 function getSessionById_(id) { return sheetObjects_(getSheet_(MATHS.SHEETS.SESSIONS)).find(r => String(r.session_id) === id); }
 function updateSessionProgress_(id, index, completed) {
   const sh = getSheet_(MATHS.SHEETS.SESSIONS); const r = sheetObjects_(sh).find(x => String(x.session_id) === id); if (!r) return;
-  sh.getRange(r.__row,5,1,3).setValues([[Number(index || 0), new Date(), !!completed]]);
+  updateSheetObject_(sh,r.__row,{current_index:Number(index||0),updated_at:new Date(),completed:!!completed});
 }
 function getResumeSession_() {
   const rows = sheetObjects_(getSheet_(MATHS.SHEETS.SESSIONS)).filter(r => r.session_id && !bool_(r.completed)).sort((a,b) => new Date(b.updated_at) - new Date(a.updated_at));
@@ -102,13 +124,13 @@ function getSetting_(key, fallback) { const o = getSettingsObject_(); return Obj
 
 function ensureMathsInfrastructure_() {
   const ss=SpreadsheetApp.getActive();
-  ensureSheet_(ss,MATHS.SHEETS.QUESTIONS,['Question_ID','Chapter','Topic','Subtopic','Card_Type','Prompt','Answer','Explanation','Memory_Cue','Difficulty','Marked_Default','Mastered_Default','Diagram_Type','Diagram_JSON','Source_File','Source_Page','Source_URL','Status','Answer_Mode','Option_A','Option_B','Option_C','Option_D','Correct_Option','Template_Group','Variant_Types','Rotation_Tier']);
-  ensureSheet_(ss,MATHS.SHEETS.STATE,['Question_ID','Attempts','Mastered','Marked','Last_Attempt','Last_Result','Last_Response_Sec','Chapter','Topic','Subtopic','Last_Variant','Last_Correct_Option']);
-  ensureSheet_(ss,MATHS.SHEETS.ATTEMPTS,['Attempt_ID','Timestamp','Question_ID','Result','Response_Sec','Mode','Session_ID','Mastered_After','Marked_After']);
-  ensureSheet_(ss,MATHS.SHEETS.SESSIONS,['Session_ID','Mode','Title','Question_IDs_JSON','Current_Index','Updated_At','Completed','Params_JSON']);
+  ensureSheet_(ss,MATHS.SHEETS.QUESTIONS,['Question_ID','Chapter','Topic','Subtopic','Card_Type','Prompt','Answer','Explanation','Memory_Cue','Difficulty','Marked_Default','Mastered_Default','Diagram_Type','Diagram_JSON','Source_File','Source_Page','Source_URL','Status','Answer_Mode','Option_A','Option_B','Option_C','Option_D','Correct_Option','Template_Group','Variant_Types','Rotation_Tier','Practice_Bank','Added_At']);
+  ensureSheet_(ss,MATHS.SHEETS.STATE,['Question_ID','Attempts','Mastered','Marked','Last_Attempt','Last_Result','Last_Response_Sec','Chapter','Topic','Subtopic','Last_Variant','Last_Correct_Option','Difficult']);
+  ensureSheet_(ss,MATHS.SHEETS.ATTEMPTS,['Attempt_ID','Timestamp','Question_ID','Result','Response_Sec','Mode','Session_ID','Mastered_After','Marked_After','Variant_Type','Selected_Option','Question_Index','Client_Attempt_Key']);
+  ensureSheet_(ss,MATHS.SHEETS.SESSIONS,['Session_ID','Mode','Title','Question_IDs_JSON','Current_Index','Updated_At','Completed','Params_JSON','Rendered_Questions_JSON']);
   ensureSheet_(ss,MATHS.SHEETS.NOTES,['Question_ID','Note','Updated_At','Pinned']);
   const settings=ensureSheet_(ss,MATHS.SHEETS.SETTINGS,['Key','Value']);
-  ensureSheet_(ss,MATHS.SHEETS.GENERATED,['Question_ID','Chapter','Topic','Subtopic','Card_Type','Prompt','Answer','Explanation','Memory_Cue','Difficulty','Marked_Default','Mastered_Default','Diagram_Type','Diagram_JSON','Source_File','Source_Page','Source_URL','Status','Answer_Mode','Option_A','Option_B','Option_C','Option_D','Correct_Option','Template_Group','Variant_Types','Rotation_Tier']);
+  ensureSheet_(ss,MATHS.SHEETS.GENERATED,['Question_ID','Chapter','Topic','Subtopic','Card_Type','Prompt','Answer','Explanation','Memory_Cue','Difficulty','Marked_Default','Mastered_Default','Diagram_Type','Diagram_JSON','Source_File','Source_Page','Source_URL','Status','Answer_Mode','Option_A','Option_B','Option_C','Option_D','Correct_Option','Template_Group','Variant_Types','Rotation_Tier','Practice_Bank','Added_At']);
   ensureSheet_(ss,MATHS.SHEETS.PLAN,['Order','Chapter','Target_Per_Day','Status','Introduced','Mastered']);
   ensureSheet_(ss,MATHS.SHEETS.DEMAND_SETS,['Set_ID','Set_Name','Description','Question_IDs_JSON','Status','Created_At']);
   const existing={}; sheetObjects_(settings).forEach(r=>{if(r.key)existing[String(r.key)]=true;}); Object.keys(MATHS.DEFAULTS).forEach(k=>{if(!existing[k])settings.appendRow([k,MATHS.DEFAULTS[k]]);});

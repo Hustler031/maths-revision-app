@@ -8,10 +8,9 @@ function ensureConceptsV4_(){
 }
 function conceptIdsV4_(){const out={};sheetObjects_(ensureConceptsV4_()).forEach(r=>{if(String(r.question_id||'').trim()&&(!Object.prototype.hasOwnProperty.call(r,'active')||bool_(r.active)))out[String(r.question_id).trim()]=true});return out;}
 function saveConceptV4(questionId,sessionId){
-  ensureMathsV3_();const id=validQuestionId_(questionId),sh=ensureConceptsV4_(),rows=sheetObjects_(sh),existing=rows.find(r=>String(r.question_id||'').trim()===id&&(!Object.prototype.hasOwnProperty.call(r,'active')||bool_(r.active)));
+  ensureMathsV3_();const q=mathsRequireQuestionContextV20_(questionId,sessionId),id=String(q.question_id),sh=ensureConceptsV4_(),rows=sheetObjects_(sh),existing=rows.find(r=>String(r.question_id||'').trim()===id&&(!Object.prototype.hasOwnProperty.call(r,'active')||bool_(r.active)));
   if(existing)return {ok:true,questionId:id,inConcept:true,alreadySaved:true};
-  const q=getAllQuestions_().concat(getGeneratedQuestions_()).find(x=>String(x.question_id)===id)||{};
-  sh.appendRow([id,new Date(),mathsV3Day_(),q.chapter||'',q.topic||'',String(sessionId||''),true]);return {ok:true,questionId:id,inConcept:true,alreadySaved:false};
+  appendSheetObject_(sh,{question_id:id,added_at:new Date(),study_day:mathsV3Day_(),chapter:q.chapter||'',topic:q.topic||'',session_id:String(sessionId||''),active:true});return {ok:true,questionId:id,inConcept:true,alreadySaved:false};
 }
 function mathsV4Metric_(questions,state){
   const ids=(questions||[]).map(q=>String(q.question_id));let attempted=0,wrong=0,difficult=0,starred=0,weak=0;
@@ -63,24 +62,8 @@ function rankWeakV4_(pool,state){return (pool||[]).filter(q=>!isMastered_(state[
 function enhanceMathsV4Payload_(payload){const concepts=conceptIdsV4_();payload=enhanceV3Payload_(payload,getStateMap_());if(payload&&Array.isArray(payload.questions))payload.questions.forEach(q=>q.inConcept=!!concepts[String(q.questionId)]);return payload;}
 function makeSessionV4_(pool,request,label){
   const state=getStateMap_(),base=String(request.title||request.chapter||request.groupName||'Maths'),title=base+' · '+label,sessionId=Utilities.getUuid(),mode='v4_'+String(request.kind||'practice'),payload=enhanceMathsV4Payload_(sessionPayload_(sessionId,pool,state,title,mode,0,null));
-  saveSession_({session_id:sessionId,mode,title,question_ids_json:JSON.stringify(pool.map(q=>q.question_id)),current_index:0,updated_at:new Date(),completed:false,params_json:JSON.stringify(request)});return payload;
+  saveSession_({session_id:sessionId,mode,title,question_ids_json:JSON.stringify(pool.map(q=>q.question_id)),current_index:0,updated_at:new Date(),completed:false,params_json:JSON.stringify(request),rendered_questions_json:JSON.stringify(payload.questions||[])});return payload;
 }
 function startMathsV4Quiz(request){
-  ensureMathsV3_();request=request||{};const scope=String(request.scope||''),kind=String(request.kind||'random').toLowerCase(),state=getStateMap_(),count=Math.max(1,Math.min(100,Number(request.count||20)));
-  let pool=null,label=kind==='all'?'Practice All':kind==='new'?'New':kind.charAt(0).toUpperCase()+kind.slice(1);
-  if(scope==='star_history'||scope==='concept_saved'){
-    pool=viewPoolV4_(request);
-    if(kind==='new')pool=pool.filter(q=>Number((state[q.question_id]||{}).attempts||0)===0).sort((a,b)=>newestKeyV4_(b)-newestKeyV4_(a)||String(b.question_id).localeCompare(String(a.question_id)));
-    else if(kind==='weak')pool=rankWeakV4_(pool,state);
-    else if(kind==='random')pool=shuffle_(pool.filter(q=>!isMastered_(state[q.question_id])));
-    else pool=pool.filter(q=>!isMastered_(state[q.question_id]));
-    if(kind!=='all')pool=pool.slice(0,Math.min(count,pool.length));
-  }else if(kind==='weak'){
-    pool=rankWeakV4_(scopePoolMathsV3_(request),state).slice(0,count);
-  }else if(kind==='new'){
-    pool=scopePoolMathsV3_(request).filter(q=>Number((state[q.question_id]||{}).attempts||0)===0).sort((a,b)=>newestKeyV4_(b)-newestKeyV4_(a)||String(b.question_id).localeCompare(String(a.question_id))).slice(0,count);
-  }else{
-    return enhanceMathsV4Payload_(startMathsV3Quiz(request));
-  }
-  if(!pool||!pool.length)return {ok:false,message:'No eligible questions found for this selection.'};return makeSessionV4_(pool,request,label);
+  return startMathsPracticeV14(request||{});
 }
