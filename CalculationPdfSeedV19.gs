@@ -1,27 +1,20 @@
-const CALC_PDF_SEED_VERSION='2026-08-26-a';
+const CALC_PDF_SEED_VERSION='2026-08-27-b';
+const CALC_PDF_SEED_PROP='CALC_PDF_SEED_'+CALC_PDF_SEED_VERSION;
 function calcSeedRowV19_(id,topic,subtopic,card,prompt,answer,explanation,cue,source,page,template,variants){return [id,'Calculation Training',topic,subtopic,card,prompt,String(answer),explanation||'',cue||'','Calculation','FALSE','FALSE','','{}',source,String(page||''),'','Active','REVEAL','','','','','',template||'',variants||'recall,drill','Core','CALCULATION']}
 function ensureCalculationPdfV19_(){
+  const props=PropertiesService.getScriptProperties();if(props.getProperty(CALC_PDF_SEED_PROP)==='1')return {ok:true,version:CALC_PDF_SEED_VERSION,inserted:0,cached:true};
   const sh=getSheet_(MATHS.SHEETS.QUESTIONS),existing={};sheetObjects_(sh).forEach(r=>existing[String(r.question_id||'')]=true);const rows=[];
   function add(row){if(row&&!existing[String(row[0])]){existing[String(row[0])]=true;rows.push(row)}}
-  // 1787768287.pdf: methods explicitly taught before the class/homework square drills.
   add(calcSeedRowV19_('CSPDFM001','Squares','Ending in 5','Method','How do you square a number ending in 5?','Multiply the part before 5 by its next integer, then append 25.','For 85²: 8×9=72, append 25 → 7225.','n5² → n(n+1)|25','1787768287.pdf',4,'SQUARE_END5','method,recall'));
   add(calcSeedRowV19_('CSPDFM002','Squares','Formula Method','Method','Recall the squaring identity used for numbers near an easy value.','(a±b)² = a² ± 2ab + b²','Choose a convenient a and small b, then apply the identity.','a², ±2ab, b²','1787768287.pdf',8,'SQUARE_FORMULA','method,recall'));
   add(calcSeedRowV19_('CSPDFM003','Squares','Base 100','Method','How do you square numbers close to 100 using the base method?','Use the deviation from 100; cross-add/subtract for the left part and square the deviation for the two-digit right part.','Example: 103² → 103+3 = 106 and 3²=09 → 10609.','Base 100 → cross ± deviation | deviation²','1787768287.pdf',12,'SQUARE_BASE100','method,recall'));
   add(calcSeedRowV19_('CSPDFM004','Squares','Base 50 / Multiple of 100','Method','What is the purpose of the multiple-of-100 / base-50 square method?','Use a nearby convenient base such as 50, 200 or 300 to reduce multiplication.','The PDF groups practice around bases that are multiples/fractions of 100.','Choose the nearest convenient base first.','1787768287.pdf',15,'SQUARE_BASE50','method,recall'));
   add(calcSeedRowV19_('CSPDFM005','Squares','Base 1000','Method','How do you square numbers close to 1000 using the base method?','Use the deviation from 1000; cross-add/subtract for the left part and square the deviation as a three-digit right block.','Example: 1007² uses deviation +7 and right block 049.','Base 1000 → cross ± deviation | 3-digit deviation²','1787768287.pdf',18,'SQUARE_BASE1000','method,recall'));
-  const groups=[
-    ['Ending in 5',4,[55,75,95,125,155,305]],['Ending in 5',6,[35,105,145,65,205,135,185,85,1005]],
-    ['Formula Method',8,[31,54,87,93,71,108,102,127,158,206,512]],['Formula Method',9,[39,74,96,107,112,181,311,66,167,203,29,83,501,59,57]],
-    ['Base 100',12,[103,98,93,109,87,113,119,121,76,106,79,92]],['Base 100',13,[103,107,94,98,89,77,117,99,105,114,111,88,84,123,116,112,91,83]],
-    ['Base 50 / Multiple of 100',15,[203,209,194,294,309,319,158,161,54,58,47,66]],['Base 50 / Multiple of 100',17,[154,56,306,397,603,698,52,57,46,42]],
-    ['Base 1000',18,[1007,996,499,507,2009,2012,1993]]
-  ];
-  const used={};let seq=1;groups.forEach(g=>g[2].forEach(n=>{if(used[n])return;used[n]=true;const id='CSPDF'+String(seq++).padStart(3,'0');add(calcSeedRowV19_(id,'Squares',g[0],'Drill',n+'² = ?',n*n,'Direct no-option square drill from the source PDF.','Recall first; calculate only if retrieval is not instant.','1787768287.pdf',g[1],'SQUARE_PDF_DRILL','recall,drill'))}));
-  // 1787768333.pdf: table ranges stated in the calculation-base syllabus. These are recall cards, not MCQs.
-  function tableRange(lo,hi,maxMul){for(let n=lo;n<=hi;n++)for(let m=1;m<=maxMul;m++){const id='TBL'+String(n).padStart(2,'0')+String(m).padStart(2,'0');add(calcSeedRowV19_(id,'Tables',n+' Table','Memory',n+' × '+m+' = ?',n*m,'Table recall card.','Target instant retrieval without options.','1787768333.pdf',2,'TABLE_'+n,'recall,reverse,rapid'))}}
-  tableRange(11,25,10);tableRange(26,30,5);tableRange(31,40,3);
-  // Fill the low-cube recall range only when it is not already represented by the generated memory bank.
-  for(let n=1;n<=11;n++){const id='CBPDF'+String(n).padStart(2,'0');add(calcSeedRowV19_(id,'Cubes','1-20 Recall','Memory',n+'³ = ?',n*n*n,'Cube recall card.','Target instant retrieval without options.','1787768333.pdf',2,'CUBE_'+n,'recall,reverse,rapid'))}
+  const groups=[['Ending in 5',4,[55,75,95,125,155,305]],['Ending in 5',6,[35,105,145,65,205,135,185,85,1005]],['Formula Method',8,[31,54,87,93,71,108,102,127,158,206,512]],['Formula Method',9,[39,74,96,107,112,181,311,66,167,203,29,83,501,59,57]],['Base 100',12,[103,98,93,109,87,113,119,121,76,106,79,92]],['Base 100',13,[103,107,94,98,89,77,117,99,105,114,111,88,84,123,116,112,91,83]],['Base 50 / Multiple of 100',15,[203,209,194,294,309,319,158,161,54,58,47,66]],['Base 50 / Multiple of 100',17,[154,56,306,397,603,698,52,57,46,42]],['Base 1000',18,[1007,996,499,507,2009,2012,1993]]];
+  const used={};let seq=1;groups.forEach(g=>g[2].forEach(n=>{if(n<17||used[n])return;used[n]=true;const id='CSPDF'+String(seq++).padStart(3,'0');add(calcSeedRowV19_(id,'Squares',g[0],'Drill',n+'² = ?',n*n,'Direct no-option square drill from the source PDF.','Recall first; calculate only if retrieval is not instant.','1787768287.pdf',g[1],'SQUARE_PDF_DRILL','recall,drill'))}));
+  function tableRange(lo,hi,minMul,maxMul){for(let n=lo;n<=hi;n++)for(let m=minMul;m<=maxMul;m++){const id='TBL'+String(n).padStart(2,'0')+String(m).padStart(2,'0');add(calcSeedRowV19_(id,'Tables',n+' Table','Memory',n+' × '+m+' = ?',n*m,'Table recall card.','Target instant retrieval without options.','1787768333.pdf',2,'TABLE_'+n,'recall,reverse,rapid'))}}
+  tableRange(11,12,6,10);tableRange(13,25,1,10);tableRange(26,30,1,5);tableRange(31,40,1,3);
+  for(let n=10;n<=11;n++){const id='CBPDF'+String(n).padStart(2,'0');add(calcSeedRowV19_(id,'Cubes','10-20 Recall','Memory',n+'³ = ?',n*n*n,'Cube recall card.','Target instant retrieval without options.','1787768333.pdf',2,'CUBE_'+n,'recall,reverse,rapid'))}
   if(rows.length){sh.getRange(sh.getLastRow()+1,1,rows.length,28).setValues(rows);bumpMathsVersionV9_()}
-  return {ok:true,version:CALC_PDF_SEED_VERSION,inserted:rows.length};
+  props.setProperty(CALC_PDF_SEED_PROP,'1');return {ok:true,version:CALC_PDF_SEED_VERSION,inserted:rows.length,cached:false};
 }
