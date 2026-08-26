@@ -31,4 +31,5 @@ jobs:
           grep -Fq "saveConfirmed" MathsQuizUI.html
           grep -Fq "unresolvedIndexes" MathsQuizUI.html
           grep -Fq "Q'+(target+1)+' was not saved" MathsQuizUI.html
-          grep -Fq "Compatibility placeholder only" DailyLifecycleFixUI.html
+          grep -Fq "function patchDailyCard(d)" DailyLifecycleFixUI.html
+          grep -Fq "maths:attempt-saved" DailyLifecycleFixUI.html
