@@ -143,6 +143,20 @@ jobs:
         env:
           DEPLOYMENT_ID: ${{ secrets.DEPLOYMENT_ID }}
         run: npx --yes @google/clasp@3.3.0 deploy --deploymentId "$DEPLOYMENT_ID" --description "GitHub $(git rev-parse --short HEAD)"
+      - name: Verify the public web app serves this build
+        env:
+          LIVE_URL: https://script.google.com/macros/s/AKfycbxBMY5zkkvM8Y9SMc3Eg0HRZ-nwF6odQ2OSqEkknTcTK103iEsjoTjGbej5F9OL2DjO/exec
+        run: |
+          npx --yes @google/clasp@3.3.0 deployments
+          for attempt in 1 2 3 4 5 6; do
+            curl --fail --silent --show-error --location "$LIVE_URL?build=$GITHUB_SHA" -o /tmp/live-maths.html
+            if grep -Fq 'Open Formula Revision' /tmp/live-maths.html; then
+              exit 0
+            fi
+            sleep 10
+          done
+          echo 'The configured Apps Script deployment did not update the required live URL.'
+          exit 1
       - name: Record verified deployment
         shell: bash
         run: |
