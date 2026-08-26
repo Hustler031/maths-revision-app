@@ -142,7 +142,7 @@ jobs:
       - name: Update existing web-app deployment
         env:
           DEPLOYMENT_ID: ${{ secrets.DEPLOYMENT_ID }}
-        run: npx --yes @google/clasp@3.3.0 create-deployment --deploymentId "$DEPLOYMENT_ID" --description "GitHub $(git rev-parse --short HEAD)"
+        run: npx --yes @google/clasp@3.3.0 deploy --deploymentId "$DEPLOYMENT_ID" --description "GitHub $(git rev-parse --short HEAD)"
       - name: Record verified deployment
         shell: bash
         run: |
