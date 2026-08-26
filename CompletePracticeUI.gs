@@ -118,5 +118,5 @@ function ready(){return typeof app!=='undefined'&&app.bootstrap&&String(app.boot
 </script>`;
   const finalizationUi=HtmlService.createHtmlOutputFromFile('MathsFinalizationUIV12').getContent();
   const formulaUi=HtmlService.createHtmlOutputFromFile('FormulaRevisionUI').getContent();
-  return quizUi+appUi+formulaUi+mocksUi+finalizationUi+routePersistenceUi;
+  return quizUi+appUi+mocksUi+finalizationUi+formulaUi+routePersistenceUi;
 }
