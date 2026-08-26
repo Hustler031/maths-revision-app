@@ -1,0 +1,3 @@
+<script>
+(function(){var open=window.openCalculationHub;if(!open)return;window.openCalculationHub=function(setId){if(typeof loading==='function')loading(true);google.script.run.withSuccessHandler(function(){if(typeof loading==='function')loading(false);open(setId)}).withFailureHandler(function(e){if(typeof loading==='function')loading(false);if(typeof toast==='function')toast(e&&e.message?e.message:'Calculation content sync failed')}).seedCalculationPdfV19()};})();
+</script>
