@@ -30,7 +30,7 @@ function submitRecallV15(payload){
     }
 
     const st=upsertState_(id,{attempt:true,mastered:!!payload.mastered,result:result,responseSec:responseSec,lastVariant:variantType,lastCorrectOption:String(payload.correctOption||'')});
-    getSheet_(MATHS.SHEETS.ATTEMPTS).appendRow([Utilities.getUuid(),new Date(),id,result,responseSec,String(payload.mode||''),sessionId,!!st.mastered,!!st.marked]);
+    getSheet_(MATHS.SHEETS.ATTEMPTS).appendRow([Utilities.getUuid(),new Date(),id,result,responseSec,String(payload.mode||''),sessionId,!!st.mastered,!!st.marked,variantType]);
     if(sessionId)mathsAdvanceSessionProgressV15_(sessionId,payload.nextIndex);
     bumpMathsVersionV9_();
     return {ok:true,deduped:false,mastered:!!st.mastered,marked:!!st.marked};
