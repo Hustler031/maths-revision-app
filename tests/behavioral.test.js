@@ -111,12 +111,14 @@ test('active UI and server contain cache, lock, exact-resume, and legacy-alias c
   const quiz=fs.readFileSync(path.join(root,'MathsQuizUI.html'),'utf8');
   const daily=fs.readFileSync(path.join(root,'MathsDailyV12.gs'),'utf8');
   const data=fs.readFileSync(path.join(root,'Data.gs'),'utf8');
-  const core=fs.readFileSync(path.join(root,'Code.gs'),'utf8');
+  const core=fs.readFileSync(path.join(root,'MathsCore.gs'),'utf8');
+  const code=fs.readFileSync(path.join(root,'Code.gs'),'utf8');
   const v2=fs.readFileSync(path.join(root,'MathsV2.gs'),'utf8');
   assert.match(app,/readInflight/);
   assert.match(quiz,/positionWrite=positionWrite\.catch/);
   assert.match(daily,/return mathsLockedV9_/);
   assert.match(data,/rendered_questions_json/);
-  assert.match(core,/function submitRecall\(payload\)\{return submitRecallV15\(payload\)\}/);
+  assert.match(core,/mathsCurrentRevisionStatsV20_/);
+  assert.match(code,/function submitRecall\(payload\)\{return submitRecallV15\(payload\)\}/);
   assert.match(v2,/return startMathsPracticeV14\(request\|\|\{\}\)/);
 });
