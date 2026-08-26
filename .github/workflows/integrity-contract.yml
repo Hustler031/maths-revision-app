@@ -29,7 +29,7 @@ jobs:
           academic=text('MathsAcademicEligibilityV14.gs')
           concepts=text('ConceptHierarchyV16.gs')
           mocks=text('MathsMocksV10.gs')
-          integ=text('MathsIntegrityV17.gs')
+          integ=text('MathsIntegrityV18.gs')
           cold=text('MathsColdStartRepairUI.html')
           quiz=text('MathsQuizLifecycleV15.gs')
           loader=text('DailyLifecycleFixLoader.gs')
@@ -43,16 +43,19 @@ jobs:
             'canonical State schema': "'Difficult'" in integ,
             'canonical Attempts schema': "'Variant_Type'" in integ,
             'canonical Sessions schema': "'Rendered_Questions_JSON'" in integ,
-            'external fingerprint': all(x in integ for x in ['mathsVisibleDataFingerprintV17_','MATHS_VISIBLE_DATA_FINGERPRINT_V17','bumpMathsVersionV9_']),
-            'concept registry guard': all(x in integ for x in ['mathsConceptRegistryReconcileV17_','conceptQuestionMissingRegistry','registryMissingQuestion','duplicateActiveConceptIds']),
+            'external fingerprint': all(x in integ for x in ['mathsVisibleDataFingerprintV18_','MATHS_VISIBLE_DATA_FINGERPRINT_V18','bumpMathsVersionV9_']),
+            'concept registry guard': all(x in integ for x in ['mathsConceptRegistryReconcileV18_','addedDedicated','preservedSavedAcademic','conceptQuestionMissingRegistry']),
+            'saved academic concepts preserved': 'if(q&&active_(q))return' in integ,
             'demand reference audit': all(x in integ for x in ['duplicateIds','missingIds','wrongCollectionIds','MOCK_FORMULA_REVISION']),
-            'MFR reveal guard': "bank==='mock formula revision'&&mode!=='REVEAL'" in integ,
-            'safe resume policy': all(x in integ for x in ['mathsResumeCandidateV17_','MATHS_RESUME_MAX_AGE_MS','getMathsResumePolicyV17']),
-            'cold startup payload': all(x in cold for x in ['getMathsStartupPayloadV17','MutationObserver','requestStartup','startupAttempts<2','window.home()']),
+            'MFR reveal guard': "bank==='MOCK_FORMULA_REVISION'&&mode!=='REVEAL'" in integ,
+            'template MCQ allowance': 'mathsHasStoredOptionsV18_' in integ,
+            'safe resume policy': all(x in integ for x in ['mathsResumeCandidateV18_','MATHS_RESUME_MAX_AGE_MS','getMathsResumePolicyV18']),
+            'stale sessions non-destructive': all(x in integ for x in ['orphanStaleSessions','orphanResumableSessions']),
+            'cold startup payload': all(x in cold for x in ['getMathsStartupPayloadV18','MutationObserver','requestStartup','startupAttempts<2','window.home()']),
             'cold cache compatibility': all(x in cold for x in ["CACHE_SCHEMA='academic-v14-cache1'","COMPAT='v14'",'readValid','writeCache']),
             'home loading decoupled': all(x in cold for x in ['homeVisible','finishVisibleHome','loading(false)']),
             'variant persisted': '!!st.marked,variantType' in quiz,
-            'cold repair served': 'MathsColdStartRepairUI' in loader,
+            'cold repair served': 'MathsColdStartRepairUI' in loader and 'ensureMathsCanonicalSchemaV18_' in loader,
             'existing V14 startup assembly retained': all(x in complete for x in ['getAppBootstrapV14','getMathsHomeV14','CACHE_SCHEMA']),
           }
           failed=[k for k,v in checks.items() if not v]
