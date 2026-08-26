@@ -1,4 +1,4 @@
-const CALC_PDF_SEED_VERSION='2026-08-27-b';
+const CALC_PDF_SEED_VERSION='2026-08-27-c';
 const CALC_PDF_SEED_PROP='CALC_PDF_SEED_'+CALC_PDF_SEED_VERSION;
 function calcSeedRowV19_(id,topic,subtopic,card,prompt,answer,explanation,cue,source,page,template,variants){return [id,'Calculation Training',topic,subtopic,card,prompt,String(answer),explanation||'',cue||'','Calculation','FALSE','FALSE','','{}',source,String(page||''),'','Active','REVEAL','','','','','',template||'',variants||'recall,drill','Core','CALCULATION']}
 function ensureCalculationPdfV19_(){
@@ -13,7 +13,7 @@ function ensureCalculationPdfV19_(){
   const groups=[['Ending in 5',4,[55,75,95,125,155,305]],['Ending in 5',6,[35,105,145,65,205,135,185,85,1005]],['Formula Method',8,[31,54,87,93,71,108,102,127,158,206,512]],['Formula Method',9,[39,74,96,107,112,181,311,66,167,203,29,83,501,59,57]],['Base 100',12,[103,98,93,109,87,113,119,121,76,106,79,92]],['Base 100',13,[103,107,94,98,89,77,117,99,105,114,111,88,84,123,116,112,91,83]],['Base 50 / Multiple of 100',15,[203,209,194,294,309,319,158,161,54,58,47,66]],['Base 50 / Multiple of 100',17,[154,56,306,397,603,698,52,57,46,42]],['Base 1000',18,[1007,996,499,507,2009,2012,1993]]];
   const used={};let seq=1;groups.forEach(g=>g[2].forEach(n=>{if(n<17||used[n])return;used[n]=true;const id='CSPDF'+String(seq++).padStart(3,'0');add(calcSeedRowV19_(id,'Squares',g[0],'Drill',n+'² = ?',n*n,'Direct no-option square drill from the source PDF.','Recall first; calculate only if retrieval is not instant.','1787768287.pdf',g[1],'SQUARE_PDF_DRILL','recall,drill'))}));
   function tableRange(lo,hi,minMul,maxMul){for(let n=lo;n<=hi;n++)for(let m=minMul;m<=maxMul;m++){const id='TBL'+String(n).padStart(2,'0')+String(m).padStart(2,'0');add(calcSeedRowV19_(id,'Tables',n+' Table','Memory',n+' × '+m+' = ?',n*m,'Table recall card.','Target instant retrieval without options.','1787768333.pdf',2,'TABLE_'+n,'recall,reverse,rapid'))}}
-  tableRange(11,12,6,10);tableRange(13,25,1,10);tableRange(26,30,1,5);tableRange(31,40,1,3);
+  tableRange(10,12,6,10);tableRange(13,25,1,10);tableRange(26,30,1,5);tableRange(31,40,1,3);
   for(let n=10;n<=11;n++){const id='CBPDF'+String(n).padStart(2,'0');add(calcSeedRowV19_(id,'Cubes','10-20 Recall','Memory',n+'³ = ?',n*n*n,'Cube recall card.','Target instant retrieval without options.','1787768333.pdf',2,'CUBE_'+n,'recall,reverse,rapid'))}
   if(rows.length){sh.getRange(sh.getLastRow()+1,1,rows.length,28).setValues(rows);bumpMathsVersionV9_()}
   props.setProperty(CALC_PDF_SEED_PROP,'1');return {ok:true,version:CALC_PDF_SEED_VERSION,inserted:rows.length,cached:false};
