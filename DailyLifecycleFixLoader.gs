@@ -1,5 +1,5 @@
 function dailyLifecycleFixUi_(){
-  ensureMathsCanonicalSchemaV17_();
+  ensureMathsCanonicalSchemaV18_();
   return HtmlService.createHtmlOutputFromFile('DailyLifecycleFixUI').getContent()
     +HtmlService.createHtmlOutputFromFile('ConceptHierarchyUI').getContent()
     +HtmlService.createHtmlOutputFromFile('MathsColdStartRepairUI').getContent();
