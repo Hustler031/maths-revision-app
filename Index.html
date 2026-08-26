@@ -147,6 +147,11 @@ function ondemand(){
       </div>
     </div>
     <div class="card">
+      <div class="eyebrow">Formula Revision</div>
+      <div class="muted" style="font-size:14px;margin:6px 0 12px">Chapter-wise Due, Weak, Starred, Difficult and New revision.</div>
+      <button class="btn primary" style="width:100%" onclick="typeof openFormulaRevisionV22==='function'?openFormulaRevisionV22():toast('Formula Revision is loading…')">Open Formula Revision</button>
+    </div>
+    <div class="card">
       <div class="eyebrow">My Demand Sets</div>
       <div class="muted" style="font-size:14px;margin:6px 0 12px">Only sets you explicitly ask me in chat to preserve appear here.</div>
       ${sets.length?`<div class="list">${sets.map(s=>`<div class="list-card"><div class="row between"><div><b>${esc(s.name)}</b><div class="muted" style="font-size:13px">${s.setId==='CALC_TRAINING'?(s.dayCount||0)+' days · '+s.count+' questions':s.count+' questions'+(s.createdAt?' · '+esc(s.createdAt):'')}</div>${s.setId==='CALC_TRAINING'?`<div class="muted" style="font-size:12px;margin-top:4px">30-day SSC CGL calculation-speed program</div>`:(s.description?`<div class="muted" style="font-size:12px;margin-top:4px">${esc(s.description)}</div>`:'')}</div><button class="btn soft small" data-set-id="${esc(s.setId)}" onclick="${s.setId==='CALC_TRAINING'?'openCalculationHub(this.dataset.setId)':'startDemandSet(this.dataset.setId)'}">${s.setId==='CALC_TRAINING'?'Open':'Practice'}</button></div></div>`).join('')}</div>`:`<div class="muted" style="font-size:14px">No preserved demand set yet.</div>`}
