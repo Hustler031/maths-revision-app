@@ -37,6 +37,8 @@ jobs:
           calc=text('CalculationSpeedV19.gs')
           calcui=text('CalculationSpeedUI.html')
           seed=text('CalculationPdfSeedV19.gs')
+          core=text('Code.gs')
+          finalui=text('MathsFinalizationUIV12.html')
           checks={
             'academic positive inclusion': "if(bank!=='academic')return false" in academic,
             'academic leakage audit': all(x in academic for x in ['practiceBankLeak','mockLeak','calculationLeak','conceptLeak']),
@@ -57,14 +59,18 @@ jobs:
             'cold startup payload': all(x in cold for x in ['getMathsStartupPayloadV18','MutationObserver','requestStartup','startupAttempts<2','window.home()']),
             'cold cache compatibility': all(x in cold for x in ["CACHE_SCHEMA='academic-v14-cache1'","COMPAT='v14'",'readValid','writeCache']),
             'home loading decoupled': all(x in cold for x in ['homeVisible','finishVisibleHome','loading(false)']),
-            'non-home external sync silent': all(x in cold for x in ['requestSilentReconcile','installPayloadSilent',"currentView()==='home'||!currentView()",'else requestSilentReconcile()']),
+            'all-view external sync silent': all(x in cold for x in ['requestSilentReconcile','installPayloadSilent','if(changed){requestSilentReconcile();return}']),
+            'home refresh stays cache-only': 'if(app.view===\'home\')renderHome(d);return d' not in complete and 'refreshMathsHomeCacheSilent' in complete,
+            'no hard browser reload': 'location.reload()' not in finalui and 'refreshDaySilently' in finalui,
+            'all-session completion gated': "Finish after every question is durably saved." in core and "normalizeLabel_(session.mode)==='daily'" not in core,
             'variant persisted': '!!st.marked,variantType' in quiz,
             'cold repair served': 'MathsColdStartRepairUI' in loader and 'ensureMathsCanonicalSchemaV18_' in loader,
             'existing V14 startup assembly retained': all(x in complete for x in ['getAppBootstrapV14','getMathsHomeV14','CACHE_SCHEMA']),
             'calculation drills classified before memory': calc.index("if(ct==='drill'") < calc.index("if(ch==='calculation memory'"),
             'calculation recall thresholds': all(x in calc for x in ["skill==='squares'","n>=17","skill==='cubes'","n>=10","n>=12&&n<=19","m>=6&&m<=12","n>=21&&n<=29","m>=3&&m<=12"]),
             'calculation hub has no seed write': 'function calcSpeedHubV19(){const pool=' in calc and 'ensureCalculationPdfV19_();const pool' not in calc,
-            'calculation cached-first v20': all(x in calcui for x in ["CACHE_KEY='maths-calc-speed-v20:hub'","CACHE_SCHEMA='calc-speed-v20-cache1'",'refreshHubInBackground','render(c.data)']),
+            'calculation cached-first v21': all(x in calcui for x in ["CACHE_KEY='maths-calc-speed-v21:hub'","CACHE_SCHEMA='calc-speed-v21-cache1'",'refreshHubInBackground','render(c.data)']),
+            'rapid recall memory-only': "if(mode==='recall'&&!req.type)req.type='MEMORY'" in calc,
             'stale calc refresh has no visual rerender': 'function refreshHubInBackground(){return gas(\'hub\').then(writeCache)' in calcui,
             'future table seed exact': all(x in seed for x in ['tableRange(12,19,6,12)','tableRange(21,29,3,12)','tableRange(30,30,1,5)','tableRange(31,40,1,3)']),
             'future square cube seed exact': all(x in seed for x in ['for(let n=17;n<=25;n++)','for(let n=10;n<=11;n++)']),

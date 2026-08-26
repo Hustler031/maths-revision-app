@@ -1,7 +1,7 @@
 <script>
 (function(){
 'use strict';
-var MATHS_COLD_START_REPAIR_VERSION='v18-cold-start-2';
+var MATHS_COLD_START_REPAIR_VERSION='v18-cold-start-3';
 var PREFIX='maths-app-v9:',MOCK_PREFIX='maths-mocks-v10:',CACHE_SCHEMA='academic-v14-cache1',COMPAT='v14',MAX_STALE=24*60*60*1000;
 var startupDone=false,startupRunning=false,silentSyncRunning=false,startupAttempts=0,lastSyncAt=0,resumePolicy=null,observer=null;
 function q(s){return document.querySelector(s)}
@@ -26,7 +26,7 @@ function requestStartup(){if(startupRunning)return;startupRunning=true;showLoadi
 function requestSilentReconcile(){if(silentSyncRunning)return;silentSyncRunning=true;google.script.run.withSuccessHandler(function(p){silentSyncRunning=false;try{installPayloadSilent(p)}catch(e){}}).withFailureHandler(function(){silentSyncRunning=false}).getMathsStartupPayloadV18();}
 function startupFailure(e){if(startupAttempts<2){requestStartup();return}var hc=readValid('home');if(hc&&typeof window.home==='function'){window.home();if(finishVisibleHome())return}renderStartupFailure(e&&e.message?e.message:String(e||'Startup failed'));}
 function renderStartupFailure(message){var m=q('#main');if(m)m.innerHTML='<div class="ma-page"><div class="ma-card"><div class="ma-row-title">Maths could not finish loading.</div><div class="ma-row-sub">'+esc(message||'Temporary startup error')+'</div><button class="btn primary" id="mathsColdRetry" style="margin-top:12px">Retry</button></div></div>';try{if(typeof loading==='function')loading(false)}catch(e){}var b=q('#mathsColdRetry');if(b)b.onclick=function(){startupAttempts=0;requestStartup()};}
-function syncExternal(force){var now=Date.now();if(!force&&now-lastSyncAt<30000)return;lastSyncAt=now;google.script.run.withSuccessHandler(function(s){if(!s||s.ok===false)return;var hc=readValid('home'),cachedVersion=String(hc&&hc.version||''),changed=s.changed||(cachedVersion&&String(s.version||'')!==cachedVersion);if(changed){if(currentView()==='home'||!currentView()){startupAttempts=0;requestStartup()}else requestSilentReconcile();return}google.script.run.withSuccessHandler(function(p){resumePolicy=p||null;enforceResumePolicy()}).withFailureHandler(function(){}).getMathsResumePolicyV18();}).withFailureHandler(function(){}).syncMathsExternalDataV18();}
+function syncExternal(force){var now=Date.now();if(!force&&now-lastSyncAt<30000)return;lastSyncAt=now;google.script.run.withSuccessHandler(function(s){if(!s||s.ok===false)return;var hc=readValid('home'),cachedVersion=String(hc&&hc.version||''),changed=s.changed||(cachedVersion&&String(s.version||'')!==cachedVersion);if(changed){requestSilentReconcile();return}google.script.run.withSuccessHandler(function(p){resumePolicy=p||null;enforceResumePolicy()}).withFailureHandler(function(){}).getMathsResumePolicyV18();}).withFailureHandler(function(){}).syncMathsExternalDataV18();}
 function init(){watchHome();var bc=readValid('bootstrap'),hc=readValid('home');if(!bc||!hc){showLoadingShell();requestStartup();}else syncExternal(true);document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')syncExternal(false)});window.addEventListener('maths:data-changed',function(){syncExternal(true)});}
 window.MathsColdStartRepairV18={version:MATHS_COLD_START_REPAIR_VERSION,sync:function(){syncExternal(true)},retry:function(){startupAttempts=0;requestStartup()},homeVisible:homeVisible};
 init();

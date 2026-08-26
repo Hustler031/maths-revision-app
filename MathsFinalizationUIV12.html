@@ -28,16 +28,18 @@ function openV12(mode,opts){
 var baseBegin=window.beginQuiz;if(typeof baseBegin==='function')window.beginQuiz=function(mode,opts){if(mode==='daily'||mode==='practice_more')return openV12(mode,opts||{});return baseBegin.apply(this,arguments)};
 var baseOpen=window.openQuiz;if(typeof baseOpen==='function')window.openQuiz=function(){var out=baseOpen.apply(this,arguments);quizVisible=true;ensureTimer();return out};
 var baseRender=window.renderQuestion;if(typeof baseRender==='function')window.renderQuestion=function(){var out=baseRender.apply(this,arguments);if(quizVisible)ensureTimer();return out};
-var baseSave=window.saveAndHome;if(typeof baseSave==='function')window.saveAndHome=function(){quizVisible=false;hideTimer();var out=baseSave.apply(this,arguments);if(pendingRollover())setTimeout(function(){location.reload()},80);return out};
+var baseSave=window.saveAndHome;if(typeof baseSave==='function')window.saveAndHome=function(){quizVisible=false;hideTimer();var out=baseSave.apply(this,arguments);if(pendingRollover()){clearPendingRollover();setTimeout(refreshDaySilently,80)};return out};
 var baseComplete=window.completeQuiz;if(typeof baseComplete==='function')window.completeQuiz=function(){quizVisible=false;hideTimer();return baseComplete.apply(this,arguments)};
 function pendingRollover(){try{return sessionStorage.getItem(ROLLOVER_KEY)==='1'}catch(e){return false}}
+function clearPendingRollover(){try{sessionStorage.removeItem(ROLLOVER_KEY)}catch(e){}}
+function refreshDaySilently(){clearDayCaches();try{if(typeof window.refreshMathsHomeCacheSilent==='function')window.refreshMathsHomeCacheSilent();else if(window.MathsColdStartRepairV18&&typeof window.MathsColdStartRepairV18.sync==='function')window.MathsColdStartRepairV18.sync()}catch(e){}}
 function clearDayCaches(){try{localStorage.removeItem('maths-app-v9:home');localStorage.removeItem('maths-app-v9:bootstrap')}catch(e){}}
 function rolloverCheck(){
   var now=indiaDay(),prev='';try{prev=localStorage.getItem(DAY_KEY)||'';localStorage.setItem(DAY_KEY,now)}catch(e){}
-  if(!prev||prev===now)return false;clearDayCaches();try{sessionStorage.setItem(ROLLOVER_KEY,'1')}catch(e){};if(!quizVisible&&!one('.quiz-wrap')){try{sessionStorage.removeItem(ROLLOVER_KEY)}catch(e){};location.reload()}return true;
+  if(!prev||prev===now)return false;clearDayCaches();try{sessionStorage.setItem(ROLLOVER_KEY,'1')}catch(e){};if(!quizVisible&&!one('.quiz-wrap')){clearPendingRollover();refreshDaySilently()}return true;
 }
 if(!rolloverCheck()){try{localStorage.setItem(DAY_KEY,indiaDay())}catch(e){}}
-setInterval(function(){rolloverCheck();if(pendingRollover()&&!quizVisible&&!one('.quiz-wrap')){try{sessionStorage.removeItem(ROLLOVER_KEY)}catch(e){};location.reload()}},30000);
+setInterval(function(){rolloverCheck();if(pendingRollover()&&!quizVisible&&!one('.quiz-wrap')){clearPendingRollover();refreshDaySilently()}},30000);
 })();
 </script>
 <script>

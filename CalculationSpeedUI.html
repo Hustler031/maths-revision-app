@@ -3,7 +3,7 @@
 </style>
 <script>
 (function(){
-var CACHE_KEY='maths-calc-speed-v20:hub',CACHE_SCHEMA='calc-speed-v20-cache1',FRESH=15*60*1000,MAX_STALE=24*60*60*1000;
+var CACHE_KEY='maths-calc-speed-v21:hub',CACHE_SCHEMA='calc-speed-v21-cache1',FRESH=15*60*1000,MAX_STALE=24*60*60*1000;
 function q(s){return document.querySelector(s)}function qa(s){return Array.from(document.querySelectorAll(s))}function e(v){return typeof esc==='function'?esc(v):String(v||'')}
 function gas(name,arg){return new Promise(function(ok,bad){var r=google.script.run.withSuccessHandler(ok).withFailureHandler(function(x){bad(new Error(x&&x.message?x.message:String(x)))});if(name==='hub')r.calcSpeedHubV19();else if(name==='start')r.startCalculationSpeedV19(arg||{});else bad(new Error('Unknown calculation endpoint'))})}
 function readCache(){try{var x=JSON.parse(localStorage.getItem(CACHE_KEY)||'null');if(!x||x.schema!==CACHE_SCHEMA||!x.ts||!x.data||Date.now()-Number(x.ts)>MAX_STALE){localStorage.removeItem(CACHE_KEY);return null}return {data:x.data,fresh:Date.now()-Number(x.ts)<=FRESH,version:x.version||''}}catch(_){return null}}
