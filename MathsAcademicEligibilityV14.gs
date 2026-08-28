@@ -71,13 +71,15 @@ function startMathsPracticeV14(request){
   return makeMathsSessionV9_(pool,request,label);
 }
 
-function getMathsScopeMetricV14(request){return Object.assign({version:mathsVersionV9_(),eligibilityVersion:MATHS_ACADEMIC_ELIGIBILITY_VERSION},mathsMetricV9_(mathsScopePoolV14_(request||{}),mathsStateMapV9_()));}
+function getMathsScopeMetricV14(request){return mathsWithReadContext_(()=>Object.assign({version:mathsVersionV9_(),eligibilityVersion:MATHS_ACADEMIC_ELIGIBILITY_VERSION},mathsMetricV9_(mathsScopePoolV14_(request||{}),mathsStateMapV9_())));}
 
 function getMathsViewItemsV14(request){
-  const state=mathsStateMapV9_();
-  return mathsScopePoolV14_(request||{}).map(q=>{
-    const s=state[String(q.question_id)]||{},served=serveQuestion_(q,s,getNotesMap_()[String(q.question_id)]||'');
-    return {id:String(q.question_id),chapter:q.chapter||'',topic:q.topic||'',subtopic:q.subtopic||'',prompt:served.prompt||q.prompt||'',options:served.options||[],correctOption:served.correctOption||'',answer:served.answer||q.answer||'',explanation:served.explanation||q.explanation||'',memoryCue:served.memoryCue||q.memory_cue||'',sourceFile:q.source_file||'',sourcePage:q.source_page||'',starred:isMarked_(s),difficult:bool_(s.difficult),hard:mathsIsHardV20_(q,state,mathsAttemptProfileMapV20_(false)),weak:mathsIsWeakV20_(q,state,mathsAttemptProfileMapV20_(false)),attempts:Number(s.attempts||0),wrong:normalizeLabel_(s.last_result)==='wrong'};
+  return mathsWithReadContext_(()=>{
+    const state=mathsStateMapV9_(),notes=getNotesMap_(),profiles=mathsAttemptProfileMapV20_(false);
+    return mathsScopePoolV14_(request||{}).map(q=>{
+      const s=state[String(q.question_id)]||{},served=serveQuestion_(q,s,notes[String(q.question_id)]||'');
+      return {id:String(q.question_id),chapter:q.chapter||'',topic:q.topic||'',subtopic:q.subtopic||'',prompt:served.prompt||q.prompt||'',options:served.options||[],correctOption:served.correctOption||'',answer:served.answer||q.answer||'',explanation:served.explanation||q.explanation||'',memoryCue:served.memoryCue||q.memory_cue||'',sourceFile:q.source_file||'',sourcePage:q.source_page||'',starred:isMarked_(s),difficult:bool_(s.difficult),hard:mathsIsHardV20_(q,state,profiles),weak:mathsIsWeakV20_(q,state,profiles),attempts:Number(s.attempts||0),wrong:normalizeLabel_(s.last_result)==='wrong'};
+    });
   });
 }
 
@@ -89,15 +91,19 @@ function buildMathsSnapshotV14_(){
 }
 
 function getMathsSnapshotV14(force){
-  const c=mathsCacheV9_(),key=mathsCacheKeyV9_('progress-academic-v14');
-  if(!force){const raw=c.get(key);if(raw)try{return JSON.parse(raw)}catch(e){}}
-  const out=buildMathsSnapshotV14_();try{c.put(key,JSON.stringify(out),MATHS_CORE_CACHE_SEC)}catch(e){}return out;
+  return mathsWithReadContext_(()=>{
+    const c=mathsCacheV9_(),key=mathsCacheKeyV9_('progress-academic-v14');
+    if(!force){const raw=c.get(key);if(raw)try{return JSON.parse(raw)}catch(e){}}
+    const out=buildMathsSnapshotV14_();try{c.put(key,JSON.stringify(out),MATHS_CORE_CACHE_SEC)}catch(e){}return out;
+  });
 }
 
 function getMathsNewHubV14(){
-  const snap=getMathsSnapshotV14(false),state=mathsStateMapV9_(),newPool=mathsNewPoolV9_(mathsAcademicQuestionsV14_(),state),by={};
-  newPool.forEach(q=>{const c=String(q.chapter||'Other');(by[c]||(by[c]=[])).push(q)});
-  return {version:snap.version,eligibilityVersion:MATHS_ACADEMIC_ELIGIBILITY_VERSION,generatedAt:new Date().toISOString(),overall:mathsMetricV9_(newPool,state),chapters:Object.keys(by).sort().map(chapter=>({chapter,metric:mathsMetricV9_(by[chapter],state)}))};
+  return mathsWithReadContext_(()=>{
+    const snap=getMathsSnapshotV14(false),state=mathsStateMapV9_(),newPool=mathsNewPoolV9_(mathsAcademicQuestionsV14_(),state),by={};
+    newPool.forEach(q=>{const c=String(q.chapter||'Other');(by[c]||(by[c]=[])).push(q)});
+    return {version:snap.version,eligibilityVersion:MATHS_ACADEMIC_ELIGIBILITY_VERSION,generatedAt:new Date().toISOString(),overall:mathsMetricV9_(newPool,state),chapters:Object.keys(by).sort().map(chapter=>({chapter,metric:mathsMetricV9_(by[chapter],state)}))};
+  });
 }
 
 function mathsChaptersV14_(){
@@ -110,11 +116,25 @@ function mathsChaptersV14_(){
   return Object.values(map).map(m=>{const order=majorTopicOrder_(m.chapter);m.majorTopics=Object.values(m.majorMap).sort((a,b)=>{const ai=order.indexOf(a.name),bi=order.indexOf(b.name);if(ai>=0||bi>=0)return(ai<0?999:ai)-(bi<0?999:bi)||a.name.localeCompare(b.name);return a.name.localeCompare(b.name)});delete m.majorMap;return m}).sort((a,b)=>a.chapter.localeCompare(b.chapter));
 }
 
-function getAppBootstrapV14(){const base=getAppBootstrapV11();base.chapters=mathsChaptersV14_();base.chapterVisibilityVersion=MATHS_ACADEMIC_ELIGIBILITY_VERSION;return base;}
+function getAppBootstrapV14(){
+  return mathsWithReadContext_(()=>({
+    title:MATHS.TITLE,
+    dashboard:mathsDashboardV9_(),
+    chapters:mathsChaptersV14_(),
+    library:mathsLibraryCountsV9_(),
+    resume:getSafeResumeSessionV9_(),
+    demandSets:getDemandSets_(),
+    settings:getSettingsObject_(),
+    version:mathsVersionV9_(),
+    chapterVisibilityVersion:MATHS_ACADEMIC_ELIGIBILITY_VERSION
+  }));
+}
 
 function getMathsHomeV14(){
-  const base=getMathsHomeV12(),snap=getMathsSnapshotV14(false),newHub=getMathsNewHubV14();
-  base.overall=snap.overall;base.newCount=Number(newHub.overall&&newHub.overall.total||0);base.starred=Number(snap.overall&&snap.overall.starred||0);base.difficult=Number(snap.overall&&snap.overall.difficult||0);base.eligibilityVersion=MATHS_ACADEMIC_ELIGIBILITY_VERSION;return base;
+  return mathsWithReadContext_(()=>{
+    const base=getMathsHomeV12(),snap=getMathsSnapshotV14(false),newHub=getMathsNewHubV14();
+    base.overall=snap.overall;base.newCount=Number(newHub.overall&&newHub.overall.total||0);base.starred=Number(snap.overall&&snap.overall.starred||0);base.difficult=Number(snap.overall&&snap.overall.difficult||0);base.eligibilityVersion=MATHS_ACADEMIC_ELIGIBILITY_VERSION;return base;
+  });
 }
 
 function auditMathsFocusedPracticeV14(){
