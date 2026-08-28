@@ -2,3 +2,17 @@
 !**/*.gs
 !**/*.html
 !appsscript.json
+
+# Historical UI layers retained in Git only; none are served by CompletePracticeUI.
+MathsV2UI.html
+MathsV3Compat.html
+MathsV3UI.html
+MathsV4UI.html
+MathsV5UI.html
+MathsV6UI.html
+MathsV7Bootstrap.html
+MathsV7UI.html
+MathsFinalUI.html
+MathsRouterUI.html
+MathsShellUI.html
+MathsAuditFixUI.html
