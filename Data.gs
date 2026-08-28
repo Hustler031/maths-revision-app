@@ -1,3 +1,23 @@
+var MATHS_READ_CONTEXT_=null;
+
+function mathsWithReadContext_(fn){
+  if(MATHS_READ_CONTEXT_)return fn();
+  MATHS_READ_CONTEXT_={sheets:{},values:{},headers:{}};
+  try{return fn();}finally{MATHS_READ_CONTEXT_=null;}
+}
+
+function mathsSheetCacheKey_(sh){
+  if(!sh)return '';
+  try{return String(sh.getSheetId());}catch(e){return String(sh.getName?sh.getName():'');}
+}
+
+function mathsInvalidateSheetReadCache_(sh){
+  if(!MATHS_READ_CONTEXT_||!sh)return;
+  const k=mathsSheetCacheKey_(sh);
+  delete MATHS_READ_CONTEXT_.values[k];
+  delete MATHS_READ_CONTEXT_.headers[k];
+}
+
 function getAllQuestions_() {
   return sheetObjects_(getSheet_(MATHS.SHEETS.QUESTIONS)).filter(r => r.question_id);
 }
@@ -21,19 +41,24 @@ function getNotesMap_() {
 }
 
 function sheetHeaderMap_(sh){
+  const ck=mathsSheetCacheKey_(sh);
+  if(MATHS_READ_CONTEXT_&&MATHS_READ_CONTEXT_.headers[ck])return MATHS_READ_CONTEXT_.headers[ck];
   const headers=sh.getRange(1,1,1,Math.max(1,sh.getLastColumn())).getValues()[0],map={};
   headers.forEach((h,i)=>{const k=key_(h);if(k)map[k]=i+1});
-  return {headers:headers,map:map};
+  const out={headers:headers,map:map};
+  if(MATHS_READ_CONTEXT_)MATHS_READ_CONTEXT_.headers[ck]=out;
+  return out;
 }
 
 function appendSheetObject_(sh,obj){
   const meta=sheetHeaderMap_(sh),row=meta.headers.map(h=>{const k=key_(h);return Object.prototype.hasOwnProperty.call(obj,k)?obj[k]:''});
-  sh.appendRow(row);return sh.getLastRow();
+  sh.appendRow(row);mathsInvalidateSheetReadCache_(sh);return sh.getLastRow();
 }
 
 function updateSheetObject_(sh,rowNumber,obj){
   const meta=sheetHeaderMap_(sh);
   Object.keys(obj||{}).forEach(k=>{const col=meta.map[key_(k)];if(col)sh.getRange(Number(rowNumber),col).setValue(obj[k])});
+  mathsInvalidateSheetReadCache_(sh);
 }
 
 function upsertState_(id, patch) {
@@ -136,8 +161,8 @@ function ensureMathsInfrastructure_() {
   const existing={}; sheetObjects_(settings).forEach(r=>{if(r.key)existing[String(r.key)]=true;}); Object.keys(MATHS.DEFAULTS).forEach(k=>{if(!existing[k])settings.appendRow([k,MATHS.DEFAULTS[k]]);});
 }
 function ensureSheet_(ss, name, headers) { let sh = ss.getSheetByName(name); if (!sh) sh = ss.insertSheet(name); if (sh.getLastRow() === 0) sh.getRange(1,1,1,headers.length).setValues([headers]); else { const existing = sh.getRange(1,1,1,Math.max(sh.getLastColumn(),1)).getValues()[0].map(String); headers.forEach(h => { if (!existing.includes(h)) { sh.getRange(1,sh.getLastColumn()+1).setValue(h); existing.push(h); } }); } return sh; }
-function getSheet_(name) { const sh = SpreadsheetApp.getActive().getSheetByName(name); if (!sh) throw new Error('Missing sheet: ' + name); return sh; }
-function sheetObjects_(sh) { if (!sh || sh.getLastRow() < 2) return []; const values = sh.getDataRange().getValues(); const headers = values[0].map(key_); return values.slice(1).map((row,i) => { const o = {__row:i+2}; headers.forEach((h,j) => o[h] = row[j]); return o; }); }
+function getSheet_(name) { if(MATHS_READ_CONTEXT_&&MATHS_READ_CONTEXT_.sheets[name])return MATHS_READ_CONTEXT_.sheets[name]; const sh = SpreadsheetApp.getActive().getSheetByName(name); if (!sh) throw new Error('Missing sheet: ' + name); if(MATHS_READ_CONTEXT_)MATHS_READ_CONTEXT_.sheets[name]=sh; return sh; }
+function sheetObjects_(sh) { if(!sh)return []; const ck=mathsSheetCacheKey_(sh); let values=null; if(MATHS_READ_CONTEXT_&&Object.prototype.hasOwnProperty.call(MATHS_READ_CONTEXT_.values,ck))values=MATHS_READ_CONTEXT_.values[ck]; else { if(sh.getLastRow()<2){if(MATHS_READ_CONTEXT_)MATHS_READ_CONTEXT_.values[ck]=[];return [];} values=sh.getDataRange().getValues(); if(MATHS_READ_CONTEXT_)MATHS_READ_CONTEXT_.values[ck]=values; } if(!values||values.length<2)return []; const headers=values[0].map(key_); return values.slice(1).map((row,i) => { const o = {__row:i+2}; headers.forEach((h,j) => o[h] = row[j]); return o; }); }
 function key_(s) { return String(s || '').trim().toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,''); }
 function bool_(v) { return v === true || String(v).toLowerCase() === 'true' || String(v) === '1'; }
 function json_(s, fallback) { try { return JSON.parse(String(s || '')); } catch (e) { return fallback; } }
