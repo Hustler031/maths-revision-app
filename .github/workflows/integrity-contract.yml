@@ -40,6 +40,7 @@ jobs:
           core=text('Code.gs')
           data=text('Data.gs')
           progress=text('MathsProgressSnapshotV10.gs')
+          progress_setup=progress.split('function ensureMathsProgressSnapshotV10_(){',1)[1]
           finalui=text('MathsFinalizationUIV12.html')
           checks={
             'academic positive inclusion': "if(bank!=='academic')return false" in academic,
@@ -75,7 +76,7 @@ jobs:
             'request-scoped sheet read cache': all(x in data for x in ['MATHS_READ_CONTEXT_','mathsWithReadContext_','MATHS_READ_CONTEXT_.values','mathsInvalidateSheetReadCache_']),
             'V14 bootstrap bypasses redundant V9 V11 chain': all(x in academic for x in ['dashboard:mathsDashboardV9_()','chapters:mathsChaptersV14_()','library:mathsLibraryCountsV9_()']) and 'getAppBootstrapV11()' not in academic,
             'V14 startup uses request read context': 'function getAppBootstrapV14(){\n  return mathsWithReadContext_' in academic and 'function getMathsHomeV14(){\n  return mathsWithReadContext_' in academic,
-            'progress trigger setup short-circuits before sheet read': progress.index("if(props.getProperty('MATHS_PROGRESS_TRIGGER_READY')==='1')return") < progress.index('const sh=mathsProgressSheetV10_()'),
+            'progress trigger setup short-circuits before sheet read': progress_setup.index("if(props.getProperty('MATHS_PROGRESS_TRIGGER_READY')==='1')return") < progress_setup.index('const sh=mathsProgressSheetV10_()'),
             'existing V14 startup assembly retained': all(x in complete for x in ['getAppBootstrapV14','getMathsHomeV14','CACHE_SCHEMA']),
             'calculation drills classified before memory': calc.index("if(ct==='drill'") < calc.index("if(ch==='calculation memory'"),
             'calculation recall thresholds': all(x in calc for x in ["skill==='squares'","n>=17","skill==='cubes'","n>=10","n>=12&&n<=19","m>=6&&m<=12","n>=21&&n<=29","m>=3&&m<=12"]),
